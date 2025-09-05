@@ -6,6 +6,7 @@ let audioStream = null;
 let audioContext = null;
 let analyser = null;
 let animationId = null;
+let isSidebarOpen = false;
 
 // DOM 요소
 const chatContainer = document.getElementById('chatContainer');
@@ -19,6 +20,9 @@ const status = document.getElementById('status');
 const visualizerContainer = document.querySelector('.visualizer-container');
 const canvas = document.getElementById('audioVisualizer');
 const canvasCtx = canvas.getContext('2d');
+const mainContainer = document.getElementById('mainContainer');
+const summarySidebar = document.getElementById('summarySidebar');
+const sidebarContent = document.getElementById('sidebarContent');
 
 // 초기화
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,6 +35,98 @@ function setupCanvas() {
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width || 800;
     canvas.height = 100;
+}
+
+// 요약 사이드바 관련 함수들
+function toggleSummary() {
+    if (!currentRoomId) {
+        alert('먼저 채팅방에 입장해주세요.');
+        return;
+    }
+    
+    if (isSidebarOpen) {
+        closeSummary();
+    } else {
+        openSummary();
+    }
+}
+
+function openSummary() {
+    isSidebarOpen = true;
+    summarySidebar.classList.add('open');
+    mainContainer.classList.add('sidebar-open');
+    loadSummary();
+}
+
+function closeSummary() {
+    isSidebarOpen = false;
+    summarySidebar.classList.remove('open');
+    mainContainer.classList.remove('sidebar-open');
+}
+
+async function loadSummary() {
+    if (!currentRoomId) return;
+    
+    // 로딩 상태 표시
+    sidebarContent.innerHTML = `
+        <div class="summary-loading">
+            <p>📊 대화를 분석하고 있습니다...</p>
+            <div style="margin: 20px 0;">
+                <div style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden;">
+                    <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #4facfe, #00f2fe); animation: loading 2s infinite;"></div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes loading {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+        </style>
+    `;
+    
+    try {
+        const response = await fetch(`/api/rooms/${currentRoomId}/summary`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            displaySummary(data);
+        } else {
+            throw new Error(data.error || '요약을 가져오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('Summary error:', error);
+        sidebarContent.innerHTML = `
+            <div class="summary-loading">
+                <p style="color: #f44336;">❌ 요약을 가져오는데 실패했습니다.</p>
+                <p style="font-size: 14px; color: #666;">${error.message}</p>
+                <button class="btn btn-primary" onclick="loadSummary()" style="margin-top: 15px;">다시 시도</button>
+            </div>
+        `;
+    }
+}
+
+function displaySummary(data) {
+    const { summary, messageCount, imageCount } = data;
+    
+    // 마크다운을 HTML로 변환
+    const htmlContent = marked.parse(summary);
+    
+    sidebarContent.innerHTML = `
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-number">${messageCount}</div>
+                <div class="stat-label">메시지</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">${imageCount}</div>
+                <div class="stat-label">이미지</div>
+            </div>
+        </div>
+        <div class="summary-text">
+            ${htmlContent}
+        </div>
+    `;
 }
 
 // Socket 이벤트 리스너

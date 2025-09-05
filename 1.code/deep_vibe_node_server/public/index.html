@@ -5,16 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>실시간 채팅 & 음성인식</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 20px; 
+            margin: 0; padding: 0; 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            transition: margin-right 0.3s ease;
+        }
+        .main-container.sidebar-open {
+            margin-right: 400px;
         }
         .container { 
-            max-width: 900px; margin: 0 auto; 
+            flex: 1;
+            max-width: 900px; margin: 20px auto; 
             background: white; border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow: hidden;
@@ -22,8 +33,26 @@
         .header {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white; padding: 20px; text-align: center;
+            position: relative;
         }
         .header h1 { margin: 0; font-size: 24px; }
+        .summary-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .summary-btn:hover {
+            background: white;
+            color: #4facfe;
+        }
         .content { padding: 20px; }
         
         .chat-container { 
@@ -110,66 +139,191 @@
             color: white; border-radius: 10px; display: none;
         }
         
+        /* 사이드바 스타일 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.open {
+            right: 0;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .summary-loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        .summary-text {
+            line-height: 1.6;
+            color: #333;
+        }
+        .summary-text h1, .summary-text h2, .summary-text h3 {
+            color: #4facfe;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .summary-text ul, .summary-text ol {
+            padding-left: 20px;
+        }
+        .summary-text li {
+            margin-bottom: 5px;
+        }
+        .summary-text code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .summary-text pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .summary-stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .stat-item {
+            flex: 1;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4facfe;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
             .container { margin: 10px; }
+            .sidebar { width: 100vw; right: -100vw; }
+            .main-container.sidebar-open { margin-right: 0; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎤 실시간 채팅 & 음성인식</h1>
-        </div>
-        
-        <div class="content">
-            <div class="grid">
-                <div class="input-group">
-                    <input type="text" id="roomName" placeholder="채팅방 이름">
-                    <button class="btn btn-primary" onclick="createRoom()">생성</button>
+    <div class="main-container" id="mainContainer">
+        <div class="container">
+            <div class="header">
+                <h1>🎤 실시간 채팅 & 음성인식</h1>
+                <button class="summary-btn" onclick="toggleSummary()">📋 요약</button>
+            </div>
+            
+            <div class="content">
+                <div class="grid">
+                    <div class="input-group">
+                        <input type="text" id="roomName" placeholder="채팅방 이름">
+                        <button class="btn btn-primary" onclick="createRoom()">생성</button>
+                    </div>
+                    
+                    <div class="input-group">
+                        <select id="roomSelect">
+                            <option value="">채팅방 선택</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="joinRoom()">입장</button>
+                    </div>
                 </div>
                 
                 <div class="input-group">
-                    <select id="roomSelect">
-                        <option value="">채팅방 선택</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="joinRoom()">입장</button>
+                    <input type="text" id="userId" placeholder="사용자 ID" value="user1">
+                    <button class="btn btn-success" onclick="setUser()">사용자 설정</button>
                 </div>
-            </div>
-            
-            <div class="input-group">
-                <input type="text" id="userId" placeholder="사용자 ID" value="user1">
-                <button class="btn btn-success" onclick="setUser()">사용자 설정</button>
-            </div>
 
-            <div id="status" class="status" style="display: none;"></div>
-            
-            <div id="chatContainer" class="chat-container"></div>
-            
-            <div class="input-group">
-                <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
-                <button class="btn btn-primary" onclick="sendMessage()">전송</button>
-            </div>
-            
-            <div class="input-group">
-                <input type="file" id="imageInput" accept="image/*" style="flex: 1;">
-                <button class="btn btn-success" onclick="uploadImage()">📷 이미지 업로드</button>
-            </div>
-            
-            <div class="record-section">
-                <button id="recordBtn" class="btn btn-success" onclick="toggleRecording()">
-                    🎤 음성인식 시작
-                </button>
-                <div id="transcribeStatus" style="margin-top: 10px;"></div>
+                <div id="status" class="status" style="display: none;"></div>
                 
-                <div class="visualizer-container">
-                    <canvas id="audioVisualizer"></canvas>
+                <div id="chatContainer" class="chat-container"></div>
+                
+                <div class="input-group">
+                    <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">전송</button>
+                </div>
+                
+                <div class="input-group">
+                    <input type="file" id="imageInput" accept="image/*" style="flex: 1;">
+                    <button class="btn btn-success" onclick="uploadImage()">📷 이미지 업로드</button>
+                </div>
+                
+                <div class="record-section">
+                    <button id="recordBtn" class="btn btn-success" onclick="toggleRecording()">
+                        🎤 음성인식 시작
+                    </button>
+                    <div id="transcribeStatus" style="margin-top: 10px;"></div>
+                    
+                    <div class="visualizer-container">
+                        <canvas id="audioVisualizer"></canvas>
+                    </div>
+                </div>
+                
+                <div id="transcribeResult">
+                    <strong>실시간 전사:</strong> <span id="transcribeText"></span>
                 </div>
             </div>
-            
-            <div id="transcribeResult">
-                <strong>실시간 전사:</strong> <span id="transcribeText"></span>
+        </div>
+    </div>
+
+    <!-- 요약 사이드바 -->
+    <div class="sidebar" id="summarySidebar">
+        <div class="sidebar-header">
+            <h3>📋 대화 요약</h3>
+            <button class="close-btn" onclick="closeSummary()">×</button>
+        </div>
+        <div class="sidebar-content" id="sidebarContent">
+            <div class="summary-loading">
+                <p>채팅방을 선택하고 요약 버튼을 눌러주세요.</p>
             </div>
         </div>
     </div>
