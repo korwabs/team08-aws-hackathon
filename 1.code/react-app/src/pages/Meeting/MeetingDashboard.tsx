@@ -30,7 +30,10 @@ export function MeetingDashboard({ onCreateMeeting, onJoinMeeting }: MeetingDash
   const handleCreateMeeting = async () => {
     if (meetingTitle && participantCount) {
       try {
-        const result = await createRoomMutation.mutateAsync({ name: meetingTitle })
+        const result = await createRoomMutation.mutateAsync({ 
+          name: meetingTitle,
+          participants: parseInt(participantCount)
+        })
         setIsModalOpen(false)
         setMeetingTitle('')
         setParticipantCount('')
@@ -42,7 +45,7 @@ export function MeetingDashboard({ onCreateMeeting, onJoinMeeting }: MeetingDash
   }
 
   const totalMeetings = rooms.length
-  const totalDemos = rooms.reduce((sum, room) => sum + (room.image_count || 0), 0)
+  const totalDemos = rooms.reduce((sum, room) => sum + (room.html_count || 0), 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,11 +128,11 @@ export function MeetingDashboard({ onCreateMeeting, onJoinMeeting }: MeetingDash
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            {room.message_count || 0} messages
+                            {room.participants} participants
                           </div>
                           <div className="flex items-center gap-1">
                             <FileCode className="w-3 h-3" />
-                            {room.image_count || 0} demos
+                            {room.html_count || 0} demos
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />

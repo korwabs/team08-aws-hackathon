@@ -1,9 +1,11 @@
 export interface Room {
   id: string
   name: string
+  participants: number
   created_at: string
   message_count?: number
   image_count?: number
+  html_count?: number
 }
 
 export interface Message {
@@ -17,6 +19,7 @@ export interface Message {
 
 export type CreateRoom = {
   name: string
+  participants?: number
 }
 
 export interface MessagesResponse {
