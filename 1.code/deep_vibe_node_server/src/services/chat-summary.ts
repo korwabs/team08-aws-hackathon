@@ -85,45 +85,22 @@ class ChatSummaryService {
     const textMessages = messages.filter(m => m.message_type === 'text');
     const imageMessages = messages.filter(m => m.message_type === 'image');
     
-    // 텍스트 대화 내용
+    // 텍스트 대화 내용만 분석
     const chatContent = textMessages
       .map(m => `[${m.created_at}] ${m.user_id}: ${m.message}`)
       .join('\n');
 
-    // Claude에 전달할 메시지 구성
-    const messageContent: any[] = [{
-      type: 'text',
-      text: `다음은 웹페이지 제작을 위한 채팅 대화 내용입니다. 대화에서 나온 모든 요구사항들을 상세히 정리해주세요.
+    const prompt = `다음은 웹페이지 제작을 위한 채팅 대화 내용입니다. 대화에서 나온 모든 요구사항들을 상세히 정리해주세요.
 
 **분석 목적**: 웹페이지 제작 에이전트에게 전달할 요구사항 정리
 **응답 형식**: 
 1. 주요 요구사항 (기능, 디자인, 기술스택 등)
 2. 세부 사항 및 제약조건
 3. 우선순위 및 중요도
-4. 이미지 관련 요구사항 (업로드된 이미지가 있다면)
+4. 참고사항 (${imageMessages.length}개의 이미지가 업로드됨)
 
 **채팅 대화 내용**:
-${chatContent}`
-    }];
-
-    // 이미지 메시지들을 base64로 변환하여 추가
-    for (const imageMsg of imageMessages) {
-      const base64Image = await this.getImageAsBase64(imageMsg.message);
-      if (base64Image) {
-        messageContent.push({
-          type: 'text',
-          text: `\n[${imageMsg.created_at}] ${imageMsg.user_id}가 업로드한 이미지:`
-        });
-        messageContent.push({
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: 'image/jpeg',
-            data: base64Image
-          }
-        });
-      }
-    }
+${chatContent}`;
 
     const input = {
       modelId: process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -134,7 +111,7 @@ ${chatContent}`
         max_tokens: 4000,
         messages: [{
           role: 'user',
-          content: messageContent
+          content: prompt
         }]
       })
     };
