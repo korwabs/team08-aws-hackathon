@@ -2,7 +2,7 @@ interface DemoPanelProps {
   meetingId: string
 }
 
-export default function DemoPanel({ meetingId }: DemoPanelProps) {
+export default function DemoPanel({ meetingId: _ }: DemoPanelProps) {
   return (
     <div className="h-full flex flex-col p-6">
       {/* 헤더 */}
