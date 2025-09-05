@@ -118,10 +118,13 @@ async function joinRoom() {
     
     try {
         const response = await fetch(`/api/rooms/${roomId}/messages`);
-        const messages = await response.json();
+        const data = await response.json();
         
         chatContainer.innerHTML = '';
-        messages.forEach(message => displayMessage(message));
+        data.messages.forEach(message => displayMessage(message));
+        
+        // 이미지 URL 목록을 콘솔에 출력 (필요시 활용)
+        console.log('Image URLs in this room:', data.imageUrls);
         
         showStatus(`채팅방에 입장했습니다.`);
     } catch (error) {
@@ -156,16 +159,67 @@ function sendMessage() {
     messageInput.value = '';
 }
 
+// 파일 업로드 함수
+async function uploadImage() {
+    const fileInput = document.getElementById('imageInput');
+    const userId = document.getElementById('userId').value.trim();
+    
+    if (!fileInput.files[0]) {
+        alert('이미지 파일을 선택하세요.');
+        return;
+    }
+    
+    if (!currentRoomId || !userId) {
+        alert('채팅방에 입장하고 사용자 ID를 설정하세요.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    formData.append('roomId', currentRoomId);
+    formData.append('userId', userId);
+    
+    try {
+        showStatus('이미지 업로드 중...', 'uploading');
+        
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error);
+        }
+        
+        const result = await response.json();
+        showStatus('이미지가 업로드되었습니다.', 'success');
+        fileInput.value = ''; // 파일 입력 초기화
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        showStatus(`업로드 실패: ${error.message}`, 'error');
+    }
+}
+
 function displayMessage(message) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${message.message_type}`;
     
     const time = new Date(message.created_at).toLocaleTimeString();
-    const typeIcon = message.message_type === 'transcribe' ? '🎤' : '💬';
+    let typeIcon = '💬';
+    let content = message.message;
+    
+    if (message.message_type === 'transcribe') {
+        typeIcon = '🎤';
+    } else if (message.message_type === 'image') {
+        typeIcon = '🖼️';
+        content = `<img src="${message.message}" alt="업로드된 이미지" style="max-width: 300px; max-height: 200px; border-radius: 8px;">`;
+    }
     
     messageDiv.innerHTML = `
         <div class="user">${typeIcon} ${message.user_id}</div>
-        <div>${message.message}</div>
+        <div>${content}</div>
         <div class="time">${time}</div>
     `;
     

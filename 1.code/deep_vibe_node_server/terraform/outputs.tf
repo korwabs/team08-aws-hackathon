@@ -13,6 +13,16 @@ output "ecs_cluster_name" {
   value       = aws_ecs_cluster.main.name
 }
 
+output "s3_bucket_name" {
+  description = "Name of the S3 uploads bucket"
+  value       = aws_s3_bucket.uploads.bucket
+}
+
+output "s3_bucket_url" {
+  description = "URL of the S3 uploads bucket"
+  value       = "https://${aws_s3_bucket.uploads.bucket}.s3.amazonaws.com"
+}
+
 output "rds_endpoint" {
   description = "RDS MySQL endpoint"
   value       = aws_db_instance.main.endpoint

@@ -1,64 +1,88 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import swaggerUi from 'swagger-ui-express';
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import swaggerUi from "swagger-ui-express";
+import multer from "multer";
 
-import db from './database';
-import TranscribeService from './transcribe-service';
-import { specs } from './swagger';
+import db from "./database";
+import TranscribeService from "./transcribe-service";
+import { specs } from "./swagger";
+import { S3UploadService } from "./services/s3-upload.service";
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 const transcribeService = new TranscribeService();
+const s3UploadService = new S3UploadService();
+
+// Multer 설정 (메모리 저장)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (s3UploadService.isImageFile(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("이미지 파일만 업로드 가능합니다."));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB 제한
+  },
+});
 
 // 실시간 전사 결과 콜백 설정
 transcribeService.setSocketCallback((socketId: string, result: any) => {
   const socket = io.sockets.sockets.get(socketId);
   if (socket) {
-    socket.emit('transcribe-result', result);
-    
+    socket.emit("transcribe-result", result);
+
     // 최종 결과인 경우 채팅 메시지로 저장
-    if (!result.isPartial && (socket as any).roomId && result.transcript.trim()) {
-      const userId = (socket as any).userId || 'anonymous';
+    if (
+      !result.isPartial &&
+      (socket as any).roomId &&
+      result.transcript.trim()
+    ) {
+      const userId = (socket as any).userId || "anonymous";
       console.log(`💾 Saving message: "${result.transcript}" from ${userId}`);
-      
-      db.execute('INSERT INTO messages (room_id, user_id, message, message_type) VALUES (?, ?, ?, ?)', 
-        [(socket as any).roomId, userId, result.transcript, 'transcribe'])
+
+      db.execute(
+        "INSERT INTO messages (room_id, user_id, message, message_type) VALUES (?, ?, ?, ?)",
+        [(socket as any).roomId, userId, result.transcript, "transcribe"]
+      )
         .then(([dbResult]: any) => {
           const messageData = {
             id: dbResult.insertId,
             room_id: (socket as any).roomId,
             user_id: userId,
             message: result.transcript,
-            message_type: 'transcribe',
-            created_at: new Date().toISOString()
+            message_type: "transcribe",
+            created_at: new Date().toISOString(),
           };
-          io.to((socket as any).roomId).emit('new-message', messageData);
+          io.to((socket as any).roomId).emit("new-message", messageData);
         })
-        .catch(error => console.error('Database error:', error));
+        .catch((error) => console.error("Database error:", error));
     }
   }
 });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, "../public")));
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 /**
  * @swagger
@@ -77,9 +101,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
  *                 $ref: '#/components/schemas/Room'
  */
 // REST API 엔드포인트
-app.get('/api/rooms', async (req, res) => {
+app.get("/api/rooms", async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM chat_rooms ORDER BY created_at DESC');
+    const [rows] = await db.execute(
+      "SELECT * FROM chat_rooms ORDER BY created_at DESC"
+    );
     res.json(rows);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -112,12 +138,15 @@ app.get('/api/rooms', async (req, res) => {
  *                 name:
  *                   type: string
  */
-app.post('/api/rooms', async (req, res) => {
+app.post("/api/rooms", async (req, res) => {
   const { name } = req.body;
   const roomId = uuidv4();
-  
+
   try {
-    await db.execute('INSERT INTO chat_rooms (id, name) VALUES (?, ?)', [roomId, name]);
+    await db.execute("INSERT INTO chat_rooms (id, name) VALUES (?, ?)", [
+      roomId,
+      name,
+    ]);
     res.json({ id: roomId, name });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -139,20 +168,112 @@ app.post('/api/rooms', async (req, res) => {
  *         description: 채팅방 ID
  *     responses:
  *       200:
- *         description: 채팅 메시지 목록
+ *         description: 채팅 메시지 목록과 이미지 URL 목록
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Message'
+ *               type: object
+ *               properties:
+ *                 messages:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Message'
+ *                 imageUrls:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: 채팅방의 모든 이미지 URL 목록
  */
-app.get('/api/rooms/:roomId/messages', async (req, res) => {
-  const { roomId } = req.params;
-  
+
+/**
+ * @swagger
+ * /api/upload:
+ *   post:
+ *     summary: 이미지 파일 업로드
+ *     tags: [Upload]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *               roomId:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 업로드된 이미지 URL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                 messageId:
+ *                   type: number
+ */
+app.post("/api/upload", upload.single("image"), async (req, res) => {
   try {
-    const [rows] = await db.execute('SELECT * FROM messages WHERE room_id = ? ORDER BY created_at ASC', [roomId]);
-    res.json(rows);
+    if (!req.file) {
+      return res.status(400).json({ error: "파일이 선택되지 않았습니다." });
+    }
+
+    const { roomId, userId } = req.body;
+    if (!roomId || !userId) {
+      return res.status(400).json({ error: "roomId와 userId가 필요합니다." });
+    }
+
+    const imageUrl = await s3UploadService.uploadImage(req.file);
+
+    // 이미지 메시지를 데이터베이스에 저장
+    const [result]: any = await db.execute(
+      "INSERT INTO messages (room_id, user_id, message, message_type) VALUES (?, ?, ?, ?)",
+      [roomId, userId, imageUrl, "image"]
+    );
+
+    const messageData = {
+      id: result.insertId,
+      room_id: roomId,
+      user_id: userId,
+      message: imageUrl,
+      message_type: "image",
+      created_at: new Date().toISOString(),
+    };
+
+    // 실시간으로 채팅방에 이미지 메시지 전송
+    io.to(roomId).emit("new-message", messageData);
+
+    res.json({ url: imageUrl, messageId: result.insertId });
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/rooms/:roomId/messages", async (req, res) => {
+  const { roomId } = req.params;
+
+  try {
+    const [rows]: any = await db.execute(
+      "SELECT * FROM messages WHERE room_id = ? ORDER BY created_at ASC",
+      [roomId]
+    );
+
+    const messages = rows.filter((row: any) => row.message_type !== "image");
+    const imageUrls = rows
+      .filter((row: any) => row.message_type === "image")
+      .map((row: any) => row.message);
+
+    res.json({
+      messages: rows,
+      imageUrls: imageUrls,
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -191,76 +312,84 @@ app.get('/api/rooms/:roomId/messages', async (req, res) => {
  */
 
 // WebSocket 연결 처리
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
 
   // 채팅방 입장
-  socket.on('join-room', (roomId: string) => {
+  socket.on("join-room", (roomId: string) => {
     socket.join(roomId);
     (socket as any).roomId = roomId;
     console.log(`Socket ${socket.id} joined room ${roomId}`);
   });
 
   // 채팅 메시지
-  socket.on('chat-message', async (data: { roomId: string; userId: string; message: string }) => {
-    const { roomId, userId, message } = data;
-    
-    try {
-      const [result]: any = await db.execute('INSERT INTO messages (room_id, user_id, message) VALUES (?, ?, ?)', 
-        [roomId, userId, message]);
-      
-      const messageData = {
-        id: result.insertId,
-        room_id: roomId,
-        user_id: userId,
-        message: message,
-        message_type: 'text',
-        created_at: new Date().toISOString()
-      };
-      
-      io.to(roomId).emit('new-message', messageData);
-    } catch (error) {
-      console.error('Database error:', error);
+  socket.on(
+    "chat-message",
+    async (data: { roomId: string; userId: string; message: string }) => {
+      const { roomId, userId, message } = data;
+
+      try {
+        const [result]: any = await db.execute(
+          "INSERT INTO messages (room_id, user_id, message) VALUES (?, ?, ?)",
+          [roomId, userId, message]
+        );
+
+        const messageData = {
+          id: result.insertId,
+          room_id: roomId,
+          user_id: userId,
+          message: message,
+          message_type: "text",
+          created_at: new Date().toISOString(),
+        };
+
+        io.to(roomId).emit("new-message", messageData);
+      } catch (error) {
+        console.error("Database error:", error);
+      }
     }
-  });
+  );
 
   // 음성 전사 시작
-  socket.on('start-transcribe', async (data: { languageCode?: string }) => {
+  socket.on("start-transcribe", async (data: { languageCode?: string }) => {
     try {
-      const result = await transcribeService.startTranscription(socket.id, data.languageCode);
-      socket.emit('transcribe-started', result);
+      const result = await transcribeService.startTranscription(
+        socket.id,
+        data.languageCode
+      );
+      socket.emit("transcribe-started", result);
     } catch (error: any) {
-      socket.emit('transcribe-error', { error: error.message });
+      socket.emit("transcribe-error", { error: error.message });
     }
   });
 
   // 음성 데이터 수신
-  socket.on('audio-data', async (audioData: any) => {
+  socket.on("audio-data", async (audioData: any) => {
     try {
       await transcribeService.processAudioChunk(socket.id, audioData);
     } catch (error) {
-      console.error('Audio data processing error:', error);
-      socket.emit('transcribe-error', { error: 'Audio processing failed' });
+      console.error("Audio data processing error:", error);
+      socket.emit("transcribe-error", { error: "Audio processing failed" });
     }
   });
 
   // 음성 전사 중지
-  socket.on('stop-transcribe', async () => {
+  socket.on("stop-transcribe", async () => {
     try {
       const result = await transcribeService.stopTranscription(socket.id);
-      socket.emit('transcribe-stopped', result);
+      socket.emit("transcribe-stopped", result);
     } catch (error: any) {
-      socket.emit('transcribe-error', { error: error.message });
+      socket.emit("transcribe-error", { error: error.message });
     }
   });
 
   // 사용자 정보 설정
-  socket.on('set-user', (userId: string) => {
+  socket.on("set-user", (userId: string) => {
     (socket as any).userId = userId;
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
     transcribeService.stopTranscription(socket.id);
   });
 });
