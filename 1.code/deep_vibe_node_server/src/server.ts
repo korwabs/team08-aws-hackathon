@@ -94,20 +94,42 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
  *     tags: [Rooms]
  *     responses:
  *       200:
- *         description: 채팅방 목록
+ *         description: 채팅방 목록 (메시지 수 및 이미지 수 포함)
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Room'
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/Room'
+ *                   - type: object
+ *                     properties:
+ *                       message_count:
+ *                         type: number
+ *                         description: 총 메시지 수
+ *                       image_count:
+ *                         type: number
+ *                         description: 이미지 메시지 수
  */
 // REST API 엔드포인트
 app.get("/api/rooms", async (req, res) => {
   try {
-    const [rows] = await db.execute(
-      "SELECT * FROM chat_rooms ORDER BY created_at DESC"
-    );
+    const [rows] = await db.execute(`
+      SELECT 
+        r.*,
+        COALESCE(m.total_messages, 0) as message_count,
+        COALESCE(m.image_count, 0) as image_count
+      FROM chat_rooms r
+      LEFT JOIN (
+        SELECT 
+          room_id,
+          COUNT(*) as total_messages,
+          SUM(CASE WHEN message_type = 'image' THEN 1 ELSE 0 END) as image_count
+        FROM messages 
+        GROUP BY room_id
+      ) m ON r.id = m.room_id
+      ORDER BY r.created_at DESC
+    `);
     res.json(rows);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
