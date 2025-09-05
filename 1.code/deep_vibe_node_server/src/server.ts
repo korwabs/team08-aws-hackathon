@@ -106,7 +106,7 @@ app.get("/api/docs/swagger.json", (req, res) => {
  *     tags: [Rooms]
  *     responses:
  *       200:
- *         description: 채팅방 목록 (메시지 수 및 이미지 수 포함)
+ *         description: 채팅방 목록 (메시지 수, 이미지 수, HTML 파일 수 포함)
  *         content:
  *           application/json:
  *             schema:
@@ -122,6 +122,9 @@ app.get("/api/docs/swagger.json", (req, res) => {
  *                       image_count:
  *                         type: number
  *                         description: 이미지 메시지 수
+ *                       html_count:
+ *                         type: number
+ *                         description: HTML 파일 수
  */
 // REST API 엔드포인트
 app.get("/api/rooms", async (req, res) => {
@@ -130,7 +133,8 @@ app.get("/api/rooms", async (req, res) => {
       SELECT 
         r.*,
         COALESCE(m.total_messages, 0) as message_count,
-        COALESCE(m.image_count, 0) as image_count
+        COALESCE(m.image_count, 0) as image_count,
+        COALESCE(h.html_count, 0) as html_count
       FROM chat_rooms r
       LEFT JOIN (
         SELECT 
@@ -140,6 +144,13 @@ app.get("/api/rooms", async (req, res) => {
         FROM messages 
         GROUP BY room_id
       ) m ON r.id = m.room_id
+      LEFT JOIN (
+        SELECT 
+          room_id,
+          COUNT(*) as html_count
+        FROM html_files 
+        GROUP BY room_id
+      ) h ON r.id = h.room_id
       ORDER BY r.created_at DESC
     `);
     res.json(rows);

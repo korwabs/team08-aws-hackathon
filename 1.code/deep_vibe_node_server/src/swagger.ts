@@ -98,7 +98,8 @@ const swagger2Options = {
           participants: { type: 'integer' },
           created_at: { type: 'string', format: 'date-time' },
           message_count: { type: 'integer' },
-          image_count: { type: 'integer' }
+          image_count: { type: 'integer' },
+          html_count: { type: 'integer' }
         }
       },
       Message: {
