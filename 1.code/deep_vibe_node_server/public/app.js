@@ -131,19 +131,33 @@ function displaySummary(data) {
 
 // Socket 이벤트 리스너
 socket.on('new-message', (message) => {
+    console.log('📨 [new-message] Received:', {
+        id: message.id,
+        user_id: message.user_id,
+        message_type: message.message_type,
+        message: message.message.substring(0, 50) + (message.message.length > 50 ? '...' : '')
+    });
     displayMessage(message);
 });
 
 socket.on('transcribe-started', (result) => {
+    console.log('🎤 [transcribe-started] Received:', result);
     showStatus('음성인식이 시작되었습니다.', 'transcribing');
     transcribeStatus.innerHTML = '<span style="color: #4caf50;">🎤 인식 중...</span>';
 });
 
 socket.on('transcribe-result', (result) => {
+    console.log('🎯 [transcribe-result] Received:', {
+        transcript: result.transcript,
+        isPartial: result.isPartial,
+        confidence: result.confidence
+    });
     transcribeText.textContent = result.transcript;
     transcribeResult.style.display = 'block';
     
+    // 최종 결과인 경우 추가 로그
     if (!result.isPartial) {
+        console.log('✅ [transcribe-result] Final result received, will be saved as message');
         setTimeout(() => {
             transcribeResult.style.display = 'none';
         }, 3000);
@@ -151,12 +165,14 @@ socket.on('transcribe-result', (result) => {
 });
 
 socket.on('transcribe-stopped', () => {
+    console.log('🛑 [transcribe-stopped] Received');
     showStatus('음성인식이 중지되었습니다.', '');
     transcribeStatus.textContent = '';
     transcribeResult.style.display = 'none';
 });
 
 socket.on('transcribe-error', (error) => {
+    console.error('❌ [transcribe-error] Received:', error);
     showStatus(`음성인식 오류: ${error.error}`, 'error');
     transcribeStatus.innerHTML = '<span style="color: #f44336;">❌ 오류 발생</span>';
 });
@@ -212,12 +228,19 @@ async function joinRoom() {
         return;
     }
     
+    console.log('🏠 [join-room] Joining room:', roomId);
     currentRoomId = roomId;
     socket.emit('join-room', roomId);
     
     try {
         const response = await fetch(`/api/rooms/${roomId}/messages`);
         const data = await response.json();
+        
+        console.log('📋 [join-room] Loaded messages:', {
+            roomId,
+            messageCount: data.messages.length,
+            imageCount: data.imageUrls.length
+        });
         
         chatContainer.innerHTML = '';
         data.messages.forEach(message => displayMessage(message));
@@ -234,6 +257,7 @@ async function joinRoom() {
 function setUser() {
     const userId = document.getElementById('userId').value.trim();
     if (userId) {
+        console.log('👤 [set-user] Setting user:', userId);
         socket.emit('set-user', userId);
         showStatus(`사용자 "${userId}"로 설정되었습니다.`);
     }
@@ -513,6 +537,16 @@ async function startRecording() {
                 pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
             }
             
+            // 10초마다 한 번씩만 로그 (너무 많은 로그 방지)
+            if (!window.lastAudioLogTime || Date.now() - window.lastAudioLogTime > 10000) {
+                console.log('🔊 [audio-data] Sending audio chunk:', {
+                    bufferLength: inputData.length,
+                    pcmDataSize: pcmData.buffer.byteLength,
+                    sampleRate: audioContext.sampleRate
+                });
+                window.lastAudioLogTime = Date.now();
+            }
+            
             // PCM 데이터를 서버로 전송
             socket.emit('audio-data', pcmData.buffer);
         };
@@ -525,6 +559,7 @@ async function startRecording() {
         visualizerContainer.style.display = 'block';
         drawVisualizer();
         
+        console.log('🎤 [start-transcribe] Starting transcription with language: ko-KR');
         socket.emit('start-transcribe', { languageCode: 'ko-KR' });
         
         isRecording = true;
@@ -539,6 +574,8 @@ async function startRecording() {
 }
 
 function stopRecording() {
+    console.log('🛑 [stop-transcribe] Stopping transcription');
+    
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
     }
