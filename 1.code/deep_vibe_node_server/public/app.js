@@ -1,7 +1,9 @@
 const socket = io();
 let currentRoomId = null;
 let isRecording = false;
+let isFileRecording = false;
 let mediaRecorder = null;
+let fileMediaRecorder = null;
 let audioStream = null;
 let audioContext = null;
 let analyser = null;
@@ -13,7 +15,9 @@ const chatContainer = document.getElementById('chatContainer');
 const messageInput = document.getElementById('messageInput');
 const roomSelect = document.getElementById('roomSelect');
 const recordBtn = document.getElementById('recordBtn');
+const fileRecordBtn = document.getElementById('fileRecordBtn');
 const transcribeStatus = document.getElementById('transcribeStatus');
+const fileRecordStatus = document.getElementById('fileRecordStatus');
 const transcribeResult = document.getElementById('transcribeResult');
 const transcribeText = document.getElementById('transcribeText');
 const status = document.getElementById('status');
@@ -138,6 +142,17 @@ socket.on('new-message', (message) => {
         message: message.message.substring(0, 50) + (message.message.length > 50 ? '...' : '')
     });
     displayMessage(message);
+});
+
+socket.on('chat-message', (message) => {
+    console.log('💬 [chat-message] Received:', message);
+    displayMessage({
+        id: message.id,
+        user_id: message.userId,
+        message: message.message,
+        message_type: message.messageType,
+        created_at: message.timestamp
+    });
 });
 
 socket.on('transcribe-started', (result) => {
@@ -613,3 +628,91 @@ function showStatus(message, type = '') {
 
 // 창 크기 변경 시 캔버스 크기 조정
 window.addEventListener('resize', setupCanvas);
+
+// 파일 기반 녹음 토글
+function toggleFileRecording() {
+    if (!currentRoomId) {
+        alert('먼저 채팅방에 입장해주세요.');
+        return;
+    }
+
+    if (isFileRecording) {
+        stopFileRecording();
+    } else {
+        startFileRecording();
+    }
+}
+
+// 파일 기반 녹음 시작
+async function startFileRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        fileMediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+
+        fileMediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                // 오디오 청크를 서버로 전송
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const arrayBuffer = reader.result;
+                    socket.emit('audio-chunk', arrayBuffer);
+                };
+                reader.readAsArrayBuffer(event.data);
+            }
+        };
+
+        fileMediaRecorder.start(1000); // 1초마다 데이터 전송
+        socket.emit('start-file-recording');
+
+        isFileRecording = true;
+        fileRecordBtn.textContent = '🛑 파일 녹음 중지';
+        fileRecordBtn.className = 'btn btn-danger recording';
+        fileRecordStatus.textContent = '파일 녹음 중...';
+        fileRecordStatus.style.color = '#d32f2f';
+        
+    } catch (error) {
+        console.error('Failed to start file recording:', error);
+        alert('마이크 접근 권한이 필요합니다.');
+    }
+}
+
+// 파일 기반 녹음 중지
+function stopFileRecording() {
+    if (fileMediaRecorder && fileMediaRecorder.state !== 'inactive') {
+        fileMediaRecorder.stop();
+        fileMediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    
+    socket.emit('stop-file-recording');
+    
+    isFileRecording = false;
+    fileRecordBtn.textContent = '📁 파일 녹음 시작';
+    fileRecordBtn.className = 'btn btn-warning';
+    fileRecordStatus.textContent = '음성을 처리 중입니다...';
+    fileRecordStatus.style.color = '#f57c00';
+}
+
+// 파일 STT 완료 처리
+socket.on('file-transcribe-complete', () => {
+    console.log('File transcription completed');
+    fileRecordStatus.textContent = '음성 처리 완료!';
+    fileRecordStatus.style.color = '#4caf50';
+    
+    setTimeout(() => {
+        fileRecordStatus.textContent = '';
+    }, 3000);
+});
+
+// 파일 STT 에러 처리
+socket.on('file-transcribe-error', (data) => {
+    console.error('File transcribe error:', data.error);
+    fileRecordStatus.textContent = `오류: ${data.error}`;
+    fileRecordStatus.style.color = '#d32f2f';
+    
+    setTimeout(() => {
+        fileRecordStatus.textContent = '';
+    }, 5000);
+});
