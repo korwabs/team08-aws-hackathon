@@ -25,32 +25,53 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
         setIsConnected(true)
         hasSetUser.current = false
         hasJoinedRoom.current = false
+        
+        // 연결 후 사용자 설정 및 룸 참여 처리
+        if (userId) {
+          setTimeout(() => {
+            if (globalSocket?.connected) {
+              globalSocket.emit('set-user', userId)
+              hasSetUser.current = true
+              
+              if (roomId) {
+                setTimeout(() => {
+                  if (globalSocket?.connected) {
+                    globalSocket.emit('join-room', roomId)
+                    hasJoinedRoom.current = true
+                  }
+                }, 50)
+              }
+            }
+          }, 50)
+        }
       })
 
-      globalSocket.on('disconnect', () => {
+      globalSocket.on('disconnect', (reason) => {
         setIsConnected(false)
         hasJoinedRoom.current = false
         hasSetUser.current = false
       })
+
+      globalSocket.on('connect_error', (error) => {
+        // Error handling without logging
+      })
     } else if (globalSocket.connected) {
       setIsConnected(true)
-    }
-
-    // 사용자 ID 설정 (한 번만)
-    if (userId && globalSocket.connected && !hasSetUser.current) {
-      globalSocket.emit('set-user', userId)
-      hasSetUser.current = true
-    }
-
-    // 룸 참여 (한 번만)
-    if (roomId && userId && globalSocket.connected && !hasJoinedRoom.current && hasSetUser.current) {
-      globalSocket.emit('join-room', { roomId, userId })
-      hasJoinedRoom.current = true
+      
+      // 이미 연결된 상태에서 새로운 룸/사용자 설정
+      if (userId && !hasSetUser.current) {
+        globalSocket.emit('set-user', userId)
+        hasSetUser.current = true
+      }
+      
+      if (roomId && hasSetUser.current && !hasJoinedRoom.current) {
+        globalSocket.emit('join-room', roomId)
+        hasJoinedRoom.current = true
+      }
     }
 
     return () => {
       // 컴포넌트 언마운트 시에도 소켓을 유지
-      // 필요시에만 disconnect 호출
     }
   }, [roomId, userId])
 
@@ -61,8 +82,8 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
   }
 
   const startTranscribe = (languageCode = 'ko-KR') => {
-    if (roomId && userId && globalSocket) {
-      globalSocket.emit('start-transcribe', { roomId, userId, languageCode })
+    if (globalSocket) {
+      globalSocket.emit('start-transcribe', { languageCode })
     }
   }
 
@@ -80,32 +101,40 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
 
   const onMessage = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('message-received', callback)
-      return () => globalSocket?.off('message-received', callback)
+      globalSocket.on('new-message', callback)
+      return () => globalSocket?.off('new-message', callback)
     }
     return () => {}
   }
 
-  const onTranscription = (callback: (data: any) => void) => {
+  const onTranscribeStarted = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('transcription-result', callback)
-      return () => globalSocket?.off('transcription-result', callback)
+      globalSocket.on('transcribe-started', callback)
+      return () => globalSocket?.off('transcribe-started', callback)
     }
     return () => {}
   }
 
-  const onUserJoined = (callback: (data: any) => void) => {
+  const onTranscribeResult = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('user-joined', callback)
-      return () => globalSocket?.off('user-joined', callback)
+      globalSocket.on('transcribe-result', callback)
+      return () => globalSocket?.off('transcribe-result', callback)
     }
     return () => {}
   }
 
-  const onUserLeft = (callback: (data: any) => void) => {
+  const onTranscribeStopped = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('user-left', callback)
-      return () => globalSocket?.off('user-left', callback)
+      globalSocket.on('transcribe-stopped', callback)
+      return () => globalSocket?.off('transcribe-stopped', callback)
+    }
+    return () => {}
+  }
+
+  const onTranscribeError = (callback: (data: any) => void) => {
+    if (globalSocket) {
+      globalSocket.on('transcribe-error', callback)
+      return () => globalSocket?.off('transcribe-error', callback)
     }
     return () => {}
   }
@@ -118,8 +147,9 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     sendAudioData,
     stopTranscribe,
     onMessage,
-    onTranscription,
-    onUserJoined,
-    onUserLeft,
+    onTranscribeStarted,
+    onTranscribeResult,
+    onTranscribeStopped,
+    onTranscribeError,
   }
 }
