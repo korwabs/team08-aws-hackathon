@@ -50,7 +50,10 @@ const upload = multer({
 const htmlUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'text/html' || file.originalname.toLowerCase().endsWith('.html')) {
+    if (
+      file.mimetype === "text/html" ||
+      file.originalname.toLowerCase().endsWith(".html")
+    ) {
       cb(null, true);
     } else {
       cb(new Error("HTML 파일만 업로드 가능합니다."));
@@ -65,6 +68,15 @@ const htmlUpload = multer({
 transcribeService.setSocketCallback((socketId: string, result: any) => {
   const socket = io.sockets.sockets.get(socketId);
   if (socket) {
+    console.log(`🎯 [transcribe-callback] Result for ${socketId}:`, {
+      transcript:
+        result.transcript?.substring(0, 50) +
+        (result.transcript?.length > 50 ? "..." : ""),
+      isPartial: result.isPartial,
+      confidence: result.confidence,
+      roomId: (socket as any).roomId,
+    });
+
     socket.emit("transcribe-result", result);
 
     // 최종 결과인 경우 채팅 메시지로 저장
@@ -74,25 +86,60 @@ transcribeService.setSocketCallback((socketId: string, result: any) => {
       result.transcript.trim()
     ) {
       const userId = (socket as any).userId || "anonymous";
-      console.log(`💾 Saving message: "${result.transcript}" from ${userId}`);
+      const roomId = (socket as any).roomId;
+
+      console.log(
+        `💾 [transcribe-callback] Saving final transcript as message:`,
+        {
+          socketId,
+          userId,
+          roomId,
+          transcript: result.transcript,
+          transcriptLength: result.transcript.length,
+        }
+      );
 
       db.execute(
         "INSERT INTO messages (room_id, user_id, message, message_type) VALUES (?, ?, ?, ?)",
-        [(socket as any).roomId, userId, result.transcript, "transcribe"]
+        [roomId, userId, result.transcript, "transcribe"]
       )
         .then(([dbResult]: any) => {
           const messageData = {
             id: dbResult.insertId,
-            room_id: (socket as any).roomId,
+            room_id: roomId,
             user_id: userId,
             message: result.transcript,
             message_type: "transcribe",
             created_at: new Date().toISOString(),
           };
-          io.to((socket as any).roomId).emit("new-message", messageData);
+
+          console.log(
+            `📤 [transcribe-callback] Broadcasting transcribed message to room ${roomId}:`,
+            {
+              messageId: dbResult.insertId,
+              userId,
+              transcript:
+                result.transcript.substring(0, 50) +
+                (result.transcript.length > 50 ? "..." : ""),
+            }
+          );
+
+          io.to(roomId).emit("new-message", messageData);
+          console.log(
+            `✅ [transcribe-callback] Transcribed message saved and broadcasted successfully`
+          );
         })
-        .catch((error) => console.error("Database error:", error));
+        .catch((error) => {
+          console.error(
+            `❌ [transcribe-callback] Error saving transcribed message:`,
+            error
+          );
+        });
     }
+  } else {
+    console.warn(
+      `⚠️ [transcribe-callback] Socket ${socketId} not found for transcribe result`
+    );
   }
 });
 
@@ -205,11 +252,10 @@ app.post("/api/rooms", async (req, res) => {
   const roomId = uuidv4();
 
   try {
-    await db.execute("INSERT INTO chat_rooms (id, name, participants) VALUES (?, ?, ?)", [
-      roomId,
-      name,
-      participants,
-    ]);
+    await db.execute(
+      "INSERT INTO chat_rooms (id, name, participants) VALUES (?, ?, ?)",
+      [roomId, name, participants]
+    );
     res.json({ id: roomId, name, participants });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -345,31 +391,43 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
  *       200:
  *         description: HTML 파일 업로드 성공
  */
-app.post("/api/rooms/:roomId/html", htmlUpload.single("html"), async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const { userId } = req.body;
+app.post(
+  "/api/rooms/:roomId/html",
+  htmlUpload.single("html"),
+  async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { userId } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({ error: "HTML 파일이 선택되지 않았습니다." });
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ error: "HTML 파일이 선택되지 않았습니다." });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ error: "userId가 필요합니다." });
+      }
+
+      // HTML 파일만 허용
+      if (!req.file.originalname.toLowerCase().endsWith(".html")) {
+        return res
+          .status(400)
+          .json({ error: "HTML 파일만 업로드 가능합니다." });
+      }
+
+      const result = await htmlUploadService.uploadHtml(
+        roomId,
+        req.file,
+        userId
+      );
+      res.json(result);
+    } catch (error: any) {
+      console.error("HTML upload error:", error);
+      res.status(500).json({ error: error.message });
     }
-
-    if (!userId) {
-      return res.status(400).json({ error: "userId가 필요합니다." });
-    }
-
-    // HTML 파일만 허용
-    if (!req.file.originalname.toLowerCase().endsWith('.html')) {
-      return res.status(400).json({ error: "HTML 파일만 업로드 가능합니다." });
-    }
-
-    const result = await htmlUploadService.uploadHtml(roomId, req.file, userId);
-    res.json(result);
-  } catch (error: any) {
-    console.error("HTML upload error:", error);
-    res.status(500).json({ error: error.message });
   }
-});
+);
 
 /**
  * @swagger
@@ -455,7 +513,7 @@ app.get("/api/rooms/:roomId/messages", async (req, res) => {
  */
 app.get("/api/rooms/:roomId/summary", async (req, res) => {
   const { roomId } = req.params;
-  
+
   try {
     const summary = await chatSummaryService.summarizeChat(roomId);
     res.json(summary);
@@ -499,13 +557,33 @@ app.get("/api/rooms/:roomId/summary", async (req, res) => {
 
 // WebSocket 연결 처리
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  console.log(
+    `🔌 [WebSocket] New connection: ${socket.id} from ${socket.handshake.address}`
+  );
 
   // 채팅방 입장
   socket.on("join-room", (roomId: string) => {
+    console.log(`🏠 [join-room] Socket ${socket.id} joining room: ${roomId}`);
+
+    // 이전 방에서 나가기
+    if ((socket as any).roomId) {
+      const prevRoom = (socket as any).roomId;
+      socket.leave(prevRoom);
+      console.log(
+        `🚪 [join-room] Socket ${socket.id} left previous room: ${prevRoom}`
+      );
+    }
+
     socket.join(roomId);
     (socket as any).roomId = roomId;
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    console.log(
+      `✅ [join-room] Socket ${socket.id} successfully joined room: ${roomId}`
+    );
+    console.log(
+      `👥 [join-room] Room ${roomId} now has ${
+        io.sockets.adapter.rooms.get(roomId)?.size || 0
+      } members`
+    );
   });
 
   // 채팅 메시지
@@ -513,6 +591,14 @@ io.on("connection", (socket) => {
     "chat-message",
     async (data: { roomId: string; userId: string; message: string }) => {
       const { roomId, userId, message } = data;
+
+      console.log(`💬 [chat-message] Received from ${socket.id}:`, {
+        roomId,
+        userId,
+        message:
+          message.substring(0, 100) + (message.length > 100 ? "..." : ""),
+        messageLength: message.length,
+      });
 
       try {
         const [result]: any = await db.execute(
@@ -529,54 +615,144 @@ io.on("connection", (socket) => {
           created_at: new Date().toISOString(),
         };
 
+        console.log(
+          `📤 [chat-message] Broadcasting to room ${roomId}, message ID: ${result.insertId}`
+        );
         io.to(roomId).emit("new-message", messageData);
+        console.log(
+          `✅ [chat-message] Message saved and broadcasted successfully`
+        );
       } catch (error) {
-        console.error("Database error:", error);
+        console.error(
+          `❌ [chat-message] Database error for ${socket.id}:`,
+          error
+        );
       }
     }
   );
 
   // 음성 전사 시작
   socket.on("start-transcribe", async (data: { languageCode?: string }) => {
+    const roomId = (socket as any).roomId;
+    const userId = (socket as any).userId || "anonymous";
+
+    console.log(`🎤 [start-transcribe] Request from ${socket.id}:`, {
+      roomId,
+      userId,
+      languageCode: data.languageCode || "ko-KR",
+    });
+
+    if (!roomId) {
+      console.warn(`⚠️ [start-transcribe] Socket ${socket.id} not in any room`);
+      socket.emit("transcribe-error", { error: "방에 입장해주세요" });
+      return;
+    }
+
     try {
       const result = await transcribeService.startTranscription(
         socket.id,
         data.languageCode
       );
+      console.log(
+        `✅ [start-transcribe] Transcription started for ${socket.id}:`,
+        result
+      );
       socket.emit("transcribe-started", result);
     } catch (error: any) {
+      console.error(`❌ [start-transcribe] Error for ${socket.id}:`, error);
       socket.emit("transcribe-error", { error: error.message });
     }
   });
 
   // 음성 데이터 수신
   socket.on("audio-data", async (audioData: any) => {
+    const roomId = (socket as any).roomId;
+    const dataSize = audioData.byteLength || audioData.length || 0;
+
+    // 너무 많은 로그를 방지하기 위해 10초마다 한 번씩만 로그
+    if (
+      !(socket as any).lastAudioLogTime ||
+      Date.now() - (socket as any).lastAudioLogTime > 10000
+    ) {
+      console.log(
+        `🔊 [audio-data] Receiving from ${socket.id}: ${dataSize} bytes/chunk (room: ${roomId})`
+      );
+      (socket as any).lastAudioLogTime = Date.now();
+    }
+
     try {
       await transcribeService.processAudioChunk(socket.id, audioData);
     } catch (error) {
-      console.error("Audio data processing error:", error);
+      console.error(
+        `❌ [audio-data] Processing error for ${socket.id}:`,
+        error
+      );
       socket.emit("transcribe-error", { error: "Audio processing failed" });
     }
   });
 
   // 음성 전사 중지
   socket.on("stop-transcribe", async () => {
+    const roomId = (socket as any).roomId;
+    const userId = (socket as any).userId || "anonymous";
+
+    console.log(`🛑 [stop-transcribe] Request from ${socket.id}:`, {
+      roomId,
+      userId,
+    });
+
     try {
       const result = await transcribeService.stopTranscription(socket.id);
+      console.log(
+        `✅ [stop-transcribe] Transcription stopped for ${socket.id}:`,
+        result
+      );
       socket.emit("transcribe-stopped", result);
     } catch (error: any) {
+      console.error(`❌ [stop-transcribe] Error for ${socket.id}:`, error);
       socket.emit("transcribe-error", { error: error.message });
     }
   });
 
   // 사용자 정보 설정
   socket.on("set-user", (userId: string) => {
+    console.log(`👤 [set-user] Socket ${socket.id} set user ID: ${userId}`);
     (socket as any).userId = userId;
+    console.log(`📝 [set-user] Socket ${socket.id} user data updated:`, {
+      socketId: socket.id,
+      userId: userId,
+      roomId: (socket as any).roomId,
+    });
   });
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-    transcribeService.stopTranscription(socket.id);
+  socket.on("disconnect", (reason) => {
+    const roomId = (socket as any).roomId;
+    const userId = (socket as any).userId;
+
+    console.log(`🔌 [disconnect] Socket ${socket.id} disconnected:`, {
+      reason,
+      roomId,
+      userId,
+      duration: Date.now() - (Number(socket.handshake.time) || Date.now()),
+    });
+
+    if (roomId) {
+      console.log(
+        `👥 [disconnect] Room ${roomId} now has ${
+          (io.sockets.adapter.rooms.get(roomId)?.size || 1) - 1
+        } members`
+      );
+    }
+
+    // 음성 전사 정리
+    try {
+      transcribeService.stopTranscription(socket.id);
+      console.log(`🧹 [disconnect] Cleaned up transcription for ${socket.id}`);
+    } catch (error) {
+      console.log(
+        `⚠️ [disconnect] No active transcription to clean up for ${socket.id}`
+      );
+    }
   });
 });
 
