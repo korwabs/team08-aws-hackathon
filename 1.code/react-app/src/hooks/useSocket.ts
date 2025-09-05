@@ -46,13 +46,13 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
         }
       })
 
-      globalSocket.on('disconnect', (reason) => {
+      globalSocket.on('disconnect', () => {
         setIsConnected(false)
         hasJoinedRoom.current = false
         hasSetUser.current = false
       })
 
-      globalSocket.on('connect_error', (error) => {
+      globalSocket.on('connect_error', () => {
         // Error handling without logging
       })
     } else if (globalSocket.connected) {

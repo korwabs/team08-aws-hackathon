@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   Button,
   Card,
@@ -11,7 +11,7 @@ import {
   Label,
   Input,
 } from '../../components/ui'
-import { Plus, Video, FileCode, Users, Clock, Calendar } from 'lucide-react'
+import { Plus, Video, FileCode, Users, Calendar } from 'lucide-react'
 import { useCreateRoom, useRooms } from '../../hooks/useApi'
 
 interface MeetingDashboardProps {
@@ -45,7 +45,7 @@ export function MeetingDashboard({ onCreateMeeting, onJoinMeeting }: MeetingDash
   }
 
   const totalMeetings = rooms.length
-  const totalDemos = rooms.reduce((sum, room) => sum + (room.html_count || 0), 0)
+  const totalDemos = rooms.reduce((sum: number, room: any) => sum + (room.html_count || 0), 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -119,7 +119,7 @@ export function MeetingDashboard({ onCreateMeeting, onJoinMeeting }: MeetingDash
             </div>
           ) : (
             <div className="grid gap-3">
-              {rooms.map((room) => (
+              {rooms.map((room: any) => (
                 <Card key={room.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between">

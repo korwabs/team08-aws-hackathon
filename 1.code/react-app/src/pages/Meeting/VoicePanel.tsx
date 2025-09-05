@@ -47,7 +47,7 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
     })
 
     // 음성인식 시작 확인
-    const unsubscribeStarted = socket.onTranscribeStarted((result) => {
+    const unsubscribeStarted = socket.onTranscribeStarted(() => {
       setStatus('🎤 음성인식 중...')
     })
 

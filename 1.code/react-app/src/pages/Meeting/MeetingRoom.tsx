@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { MeetingDashboard } from './MeetingDashboard'
-import { Button, Badge } from '../../components/ui'
+import { Button } from '../../components/ui'
 import { 
   ArrowLeft,
   Share
