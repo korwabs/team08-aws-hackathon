@@ -12,9 +12,10 @@ import multer from "multer";
 
 import db from "./database";
 import TranscribeService from "./transcribe-service";
-import { specs } from "./swagger";
+import { specs, swagger2Specs } from "./swagger";
 import { S3UploadService } from "./services/s3-upload.service";
 import ChatSummaryService from "./services/chat-summary";
+import { HtmlUploadService } from "./services/html-upload.service";
 
 const app = express();
 const server = createServer(app);
@@ -28,6 +29,7 @@ const io = new Server(server, {
 const transcribeService = new TranscribeService();
 const s3UploadService = new S3UploadService();
 const chatSummaryService = new ChatSummaryService();
+const htmlUploadService = new HtmlUploadService();
 
 // Multer 설정 (메모리 저장)
 const upload = multer({
@@ -85,6 +87,16 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 // Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+// OpenAPI JSON 문서 엔드포인트
+app.get("/api/docs/openapi.json", (req, res) => {
+  res.json(specs);
+});
+
+// OpenAPI 2.0 (Swagger 2.0) JSON 문서 엔드포인트
+app.get("/api/docs/swagger.json", (req, res) => {
+  res.json(swagger2Specs);
+});
 
 /**
  * @swagger
@@ -276,6 +288,84 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
     res.json({ url: imageUrl, messageId: result.insertId });
   } catch (error: any) {
     console.error("Upload error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/html:
+ *   post:
+ *     summary: HTML 파일 업로드
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               html:
+ *                 type: string
+ *                 format: binary
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: HTML 파일 업로드 성공
+ */
+app.post("/api/rooms/:roomId/html", upload.single("html"), async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { userId } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ error: "HTML 파일이 선택되지 않았습니다." });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId가 필요합니다." });
+    }
+
+    // HTML 파일만 허용
+    if (!req.file.originalname.toLowerCase().endsWith('.html')) {
+      return res.status(400).json({ error: "HTML 파일만 업로드 가능합니다." });
+    }
+
+    const result = await htmlUploadService.uploadHtml(roomId, req.file, userId);
+    res.json(result);
+  } catch (error: any) {
+    console.error("HTML upload error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/html:
+ *   get:
+ *     summary: HTML 파일 목록 조회
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: HTML 파일 목록
+ */
+app.get("/api/rooms/:roomId/html", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const htmlFiles = await htmlUploadService.getHtmlFiles(roomId);
+    res.json(htmlFiles);
+  } catch (error: any) {
+    console.error("HTML files fetch error:", error);
     res.status(500).json({ error: error.message });
   }
 });
