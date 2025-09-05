@@ -16,3 +16,9 @@ variable "db_password" {
   sensitive   = true
   default     = "ChatApp123!"
 }
+
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+  default     = ""
+}

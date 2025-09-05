@@ -136,7 +136,6 @@ app.post('/api/rooms', async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *           format: uuid
  *         description: 채팅방 ID
  *     responses:
  *       200:

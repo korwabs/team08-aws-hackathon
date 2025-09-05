@@ -16,7 +16,7 @@ interface DatabaseConfig {
 }
 
 const dbConfig: DatabaseConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: (process.env.DB_HOST || 'localhost').split(':')[0], // Remove port from host
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'chat_app',

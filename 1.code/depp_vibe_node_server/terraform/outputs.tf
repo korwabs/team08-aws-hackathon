@@ -22,3 +22,23 @@ output "rds_database_name" {
   description = "RDS database name"
   value       = aws_db_instance.main.db_name
 }
+
+output "certificate_arn" {
+  description = "ARN of the SSL certificate"
+  value       = var.domain_name != "" ? aws_acm_certificate.main[0].arn : null
+}
+
+output "certificate_validation_records" {
+  description = "DNS validation records for the certificate"
+  value       = var.domain_name != "" ? aws_acm_certificate.main[0].domain_validation_options : null
+}
+
+output "cloudfront_domain" {
+  description = "CloudFront distribution domain name (HTTPS enabled)"
+  value       = var.domain_name == "" ? aws_cloudfront_distribution.main[0].domain_name : null
+}
+
+output "https_url" {
+  description = "HTTPS URL for the application"
+  value       = var.domain_name != "" ? "https://${var.domain_name}" : "https://${aws_cloudfront_distribution.main[0].domain_name}"
+}

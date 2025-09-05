@@ -1,0 +1,146 @@
+asyncapi: 2.6.0
+info:
+  title: Chat Transcribe WebSocket API
+  version: 1.0.0
+  description: |
+    실시간 채팅과 AWS Transcribe 음성인식을 위한 WebSocket API
+    
+    ## 연결 방법
+    ```javascript
+    const socket = io('https://d2k05d66hwbq2e.cloudfront.net');
+    ```
+
+servers:
+  production:
+    url: d2k05d66hwbq2e.cloudfront.net
+    protocol: wss
+    description: Production WebSocket server
+  development:
+    url: localhost:3000
+    protocol: ws
+    description: Development WebSocket server
+
+channels:
+  join-room:
+    description: 채팅방 입장
+    publish:
+      message:
+        payload:
+          type: object
+          properties:
+            roomId:
+              type: string
+              format: uuid
+            userId:
+              type: string
+          required: [roomId, userId]
+
+  chat-message:
+    description: 채팅 메시지 전송
+    publish:
+      message:
+        payload:
+          type: object
+          properties:
+            roomId:
+              type: string
+              format: uuid
+            userId:
+              type: string
+            message:
+              type: string
+          required: [roomId, userId, message]
+
+  start-transcribe:
+    description: 음성인식 시작
+    publish:
+      message:
+        payload:
+          type: object
+          properties:
+            roomId:
+              type: string
+              format: uuid
+            userId:
+              type: string
+          required: [roomId, userId]
+
+  audio-data:
+    description: 오디오 데이터 전송
+    publish:
+      message:
+        payload:
+          type: object
+          properties:
+            audio:
+              type: string
+              format: binary
+              description: Base64 encoded audio data
+
+  stop-transcribe:
+    description: 음성인식 중지
+    publish:
+      message:
+        payload:
+          type: object
+
+  message-received:
+    description: 새 메시지 수신 (서버 이벤트)
+    subscribe:
+      message:
+        payload:
+          type: object
+          properties:
+            id:
+              type: integer
+            roomId:
+              type: string
+              format: uuid
+            userId:
+              type: string
+            message:
+              type: string
+            messageType:
+              type: string
+              enum: [text, voice]
+            timestamp:
+              type: string
+              format: date-time
+
+  transcription-result:
+    description: 음성인식 결과 수신 (서버 이벤트)
+    subscribe:
+      message:
+        payload:
+          type: object
+          properties:
+            transcript:
+              type: string
+            isPartial:
+              type: boolean
+
+  user-joined:
+    description: 사용자 입장 알림 (서버 이벤트)
+    subscribe:
+      message:
+        payload:
+          type: object
+          properties:
+            userId:
+              type: string
+            roomId:
+              type: string
+              format: uuid
+
+  user-left:
+    description: 사용자 퇴장 알림 (서버 이벤트)
+    subscribe:
+      message:
+        payload:
+          type: object
+          properties:
+            userId:
+              type: string
+            roomId:
+              type: string
+              format: uuid

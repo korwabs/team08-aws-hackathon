@@ -1,0 +1,2 @@
+# Copy this file to terraform.tfvars and update with your domain
+domain_name = "your-domain.com"

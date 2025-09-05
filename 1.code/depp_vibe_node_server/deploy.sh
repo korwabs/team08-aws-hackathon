@@ -24,8 +24,8 @@ echo "🐳 Building and pushing Docker image..."
 # ECR 로그인
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
 
-# Docker 이미지 빌드
-docker build -t $PROJECT_NAME .
+# Docker 이미지 빌드 (x86_64 플랫폼용)
+docker build --platform linux/amd64 -t $PROJECT_NAME .
 docker tag $PROJECT_NAME:latest $ECR_REPO:latest
 
 # ECR에 푸시
