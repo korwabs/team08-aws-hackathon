@@ -12,7 +12,7 @@ import multer from "multer";
 
 import db from "./database";
 import TranscribeService from "./transcribe-service";
-import { specs } from "./swagger";
+import { specs, swagger2Specs } from "./swagger";
 import { S3UploadService } from "./services/s3-upload.service";
 import ChatSummaryService from "./services/chat-summary";
 import { HtmlUploadService } from "./services/html-upload.service";
@@ -87,6 +87,16 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 // Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
+// OpenAPI JSON 문서 엔드포인트
+app.get("/api/docs/openapi.json", (req, res) => {
+  res.json(specs);
+});
+
+// OpenAPI 2.0 (Swagger 2.0) JSON 문서 엔드포인트
+app.get("/api/docs/swagger.json", (req, res) => {
+  res.json(swagger2Specs);
+});
 
 /**
  * @swagger
