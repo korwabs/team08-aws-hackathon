@@ -19,6 +19,7 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
   const [realtimeMessages, setRealtimeMessages] = useState<Message[]>([])
   const [transcribeText, setTranscribeText] = useState('')
   const [status, setStatus] = useState('')
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   const audioStreamRef = useRef<MediaStream | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -34,6 +35,12 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
     ...(messagesData?.messages || []),
     ...realtimeMessages
   ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  // 이미지 URL인지 확인하는 함수
+  const isImageUrl = (text: string) => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
+    return imageExtensions.some(ext => text.toLowerCase().includes(ext))
+  }
 
   // 메시지가 변경될 때마다 스크롤을 맨 아래로
   useEffect(() => {
@@ -260,7 +267,24 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
                       {new Date(message.created_at).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="text-gray-800">{message.message}</p>
+                  {isImageUrl(message.message) ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={message.message} 
+                        alt="Uploaded image" 
+                        className="w-32 h-24 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setSelectedImage(message.message)}
+                        onError={(e) => {
+                          // 이미지 로드 실패 시 텍스트로 표시
+                          e.currentTarget.style.display = 'none'
+                          e.currentTarget.nextElementSibling!.style.display = 'block'
+                        }}
+                      />
+                      <p className="text-gray-800 text-xs hidden">{message.message}</p>
+                    </div>
+                  ) : (
+                    <p className="text-gray-800">{message.message}</p>
+                  )}
                 </div>
               ))
             )}
@@ -268,6 +292,29 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
           </div>
         </div>
       </div>
+
+      {/* 이미지 모달 */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative w-2/3 h-2/3 p-4">
+            <img 
+              src={selectedImage} 
+              alt="Full size image" 
+              className="w-full h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-75"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
