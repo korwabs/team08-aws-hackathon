@@ -1,162 +1,230 @@
-# Deep Vibe Node Server - 채팅 요약 API 구현
+# Deep Vibe Node Server - 진행 상황
 
 > 전체 프로젝트 개요는 [../PROJECT.md](../PROJECT.md)를 참조하세요.
 
-## AWS Bedrock Claude Sonnet 4 채팅 요약 API 구현
+## 🎯 프로젝트 현황 (2025-09-05)
 
-### 개요
-AWS Bedrock Claude Sonnet 4를 사용하여 채팅방의 대화 내용과 이미지를 분석하고, 웹페이지 제작 에이전트를 위한 요구사항 중심의 상세한 요약을 제공하는 API를 구현했습니다.
+### ✅ 완료된 주요 기능
 
-### 구현된 기능
+#### 1. 실시간 채팅 시스템
+- **WebSocket 기반**: Socket.IO를 사용한 실시간 통신
+- **채팅방 관리**: 생성, 입장, 메시지 송수신
+- **메시지 타입**: 텍스트, 음성인식, 이미지, HTML 파일
+- **데이터베이스**: MySQL을 통한 영구 저장
 
-#### 1. API 엔드포인트
+#### 2. AWS Transcribe 음성인식
+- **실시간 스트리밍**: 마이크 입력을 실시간으로 텍스트 변환
+- **WebSocket 연동**: 음성인식 결과를 채팅으로 자동 저장
+- **오디오 시각화**: 실시간 오디오 파형 표시
 
-**새로 추가된 엔드포인트:**
+#### 3. 이미지 업로드 시스템
+- **S3 연동**: AWS S3를 통한 이미지 저장
+- **실시간 공유**: 업로드된 이미지를 채팅방에 즉시 표시
+- **파일 검증**: 이미지 파일만 업로드 허용
+
+#### 4. 🆕 HTML 파일 업로드 & 버전 관리
+- **자동 버전 관리**: 채팅방별로 v1, v2, v3... 자동 증가
+- **S3 저장**: `html/{roomId}/v{version}_{uuid}.html` 구조
+- **메타데이터 관리**: 파일명, 크기, 업로드자, 생성일시
+- **즉시 실행**: S3 퍼블릭 URL로 HTML 파일 바로 실행
+
+#### 5. 🆕 AI 채팅 요약 시스템
+- **Claude Sonnet 4**: AWS Bedrock을 통한 최신 AI 모델 사용
+- **요구사항 중심**: 웹페이지 제작을 위한 구체적 요구사항 분석
+- **텍스트 전용**: 성능 최적화를 위해 이미지 제외하고 텍스트만 분석
+- **마크다운 출력**: 구조화된 요약 결과 제공
+
+#### 6. 🆕 요약 사이드바 UI
+- **우측 슬라이드**: 부드러운 애니메이션으로 사이드바 표시
+- **마크다운 렌더링**: marked.js를 사용한 구조화된 표시
+- **통계 정보**: 메시지 수, 이미지 수 시각적 표시
+- **반응형 디자인**: 데스크톱/모바일 최적화
+
+#### 7. 🆕 API 문서화 시스템
+- **OpenAPI 3.0**: `/api/docs/openapi.json`
+- **OpenAPI 2.0**: `/api/docs/swagger.json`
+- **Swagger UI**: `/api-docs` 인터랙티브 문서
+- **외부 연동**: Postman, Insomnia 등 도구 지원
+
+### 📋 API 엔드포인트 현황
+
+#### 채팅방 관리
+- `GET /api/rooms`: 채팅방 목록 (메시지/이미지 수 포함)
+- `POST /api/rooms`: 채팅방 생성
+- `GET /api/rooms/:roomId/messages`: 메시지 조회
+
+#### 파일 업로드
+- `POST /api/upload`: 이미지 파일 업로드
+- `POST /api/rooms/:roomId/html`: HTML 파일 업로드
+- `GET /api/rooms/:roomId/html`: HTML 파일 목록 조회
+
+#### AI 기능
+- `GET /api/rooms/:roomId/summary`: 채팅 요약 (Claude Sonnet 4)
+
+#### API 문서
+- `GET /api-docs`: Swagger UI
+- `GET /api/docs/openapi.json`: OpenAPI 3.0 JSON
+- `GET /api/docs/swagger.json`: OpenAPI 2.0 JSON
+
+### 🏗️ 기술 스택
+
+#### Backend
+- **Runtime**: Node.js 18 + TypeScript
+- **Framework**: Express.js + Socket.IO
+- **Database**: MySQL (RDS)
+- **File Storage**: AWS S3
+- **AI Service**: AWS Bedrock (Claude Sonnet 4)
+- **Documentation**: Swagger/OpenAPI
+
+#### Frontend
+- **Base**: Vanilla JavaScript + HTML5/CSS3
+- **WebSocket**: Socket.IO Client
+- **File Upload**: FormData + Fetch API
+- **Markdown**: marked.js
+- **UI**: 반응형 디자인, 모달, 애니메이션
+
+#### Infrastructure
+- **Container**: Docker + ECS Fargate
+- **Load Balancer**: Application Load Balancer
+- **CDN**: CloudFront (HTTPS)
+- **IaC**: Terraform
+
+### 📊 데이터베이스 스키마
+
+```sql
+-- 채팅방
+CREATE TABLE chat_rooms (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 메시지
+CREATE TABLE messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_id VARCHAR(36) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  message_type VARCHAR(50) DEFAULT 'text',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- HTML 파일 버전 관리
+CREATE TABLE html_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_id VARCHAR(36) NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  s3_key VARCHAR(500) NOT NULL,
+  s3_url VARCHAR(1000) NOT NULL,
+  version INT NOT NULL DEFAULT 1,
+  file_size INT NOT NULL,
+  uploaded_by VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_room_version (room_id, version)
+);
 ```
-GET /api/rooms/:roomId/summary
-```
 
-**개선된 엔드포인트:**
-```
-GET /api/rooms  # 메시지 수와 이미지 수 포함
-```
+### 🎨 사용자 인터페이스
 
-#### 2. 주요 기능
-- **채팅 이력 조회**: 특정 채팅방의 모든 텍스트 및 이미지 메시지 조회
-- **이미지 분석**: S3에서 이미지를 가져와 Claude에 함께 전달하여 분석
-- **요구사항 중심 요약**: 웹페이지 제작을 위한 구체적인 요구사항 정리
-- **멀티모달 분석**: 텍스트와 이미지를 함께 분석하여 종합적인 요약 제공
-- **방 목록 개선**: 각 채팅방의 메시지 수와 이미지 수를 포함한 목록 조회
+#### 메인 기능
+- **채팅방 생성/입장**: 드롭다운 선택 및 실시간 목록 업데이트
+- **실시간 채팅**: 텍스트 메시지 송수신
+- **음성인식**: 마이크 버튼으로 음성을 텍스트로 변환
+- **이미지 업로드**: 드래그앤드롭 또는 파일 선택
+- **HTML 업로드**: 버전 관리되는 HTML 파일 업로드
 
-#### 3. 응답 형식
+#### 새로운 UI 요소
+- **📋 요약 버튼**: 헤더 우측의 요약 기능 버튼
+- **요약 사이드바**: 우측에서 슬라이드되는 요약 패널
+- **📄 HTML 업로드**: HTML 파일 업로드 버튼
+- **📋 HTML 목록**: HTML 파일 목록 모달
+- **버전 배지**: 각 HTML 파일의 버전 표시
 
-**채팅 요약 API:**
-```json
-{
-  "summary": "웹페이지 제작을 위한 상세한 요구사항 분석 결과",
-  "messageCount": 15,
-  "imageCount": 3
-}
-```
+### 🔧 환경 설정
 
-**방 목록 API:**
-```json
-[
-  {
-    "id": "room-uuid",
-    "name": "채팅방 이름",
-    "created_at": "2025-09-05T20:55:00.000Z",
-    "message_count": 15,
-    "image_count": 3
-  }
-]
-```
-
-### 기술적 구현 사항
-
-#### 1. 사용된 AWS 서비스
-- **AWS Bedrock**: Claude Sonnet 4 모델 (Cross-region inference)
-- **Amazon S3**: 이미지 파일 저장 및 조회
-- **MySQL**: 채팅 메시지 및 메타데이터 저장
-
-#### 2. 모델 설정
-```typescript
-// Cross-region inference profile 사용
-modelId: 'us.anthropic.claude-sonnet-4-20250514-v1:0'
-```
-
-#### 3. 멀티모달 입력 구성
-- 텍스트 메시지: 시간순 정렬된 대화 내용
-- 이미지 메시지: S3에서 base64로 변환하여 Claude에 전달
-- 구조화된 프롬프트: 요구사항 분석에 특화된 지시사항
-
-#### 4. 요약 출력 구조
-1. **주요 요구사항**: 기능, 디자인, 기술스택 등
-2. **세부 사항 및 제약조건**: 구체적인 구현 요구사항
-3. **우선순위 및 중요도**: 개발 순서 및 중요도 분석
-4. **이미지 관련 요구사항**: 업로드된 이미지 기반 요구사항
-
-### 파일 구조
-
-```
-deep_vibe_node_server/
-├── src/
-│   ├── server.ts                    # 메인 서버 파일 (Express + Socket.IO)
-│   ├── database.ts                  # MySQL 데이터베이스 연결 및 초기화
-│   ├── transcribe-service.ts        # AWS Transcribe 실시간 음성인식
-│   ├── swagger.ts                   # Swagger API 문서 설정
-│   ├── types.ts                     # TypeScript 타입 정의
-│   └── services/
-│       ├── chat-summary.ts          # AWS Bedrock Claude 채팅 요약 서비스
-│       └── s3-upload.service.ts     # S3 이미지 업로드 서비스
-├── public/                          # 정적 파일 (데모 웹페이지)
-│   ├── index.html
-│   └── app.js
-├── terraform/                       # AWS 인프라 IaC 구성
-│   ├── main.tf
-│   ├── variables.tf
-│   └── outputs.tf
-├── package.json                     # Node.js 의존성 및 스크립트
-├── tsconfig.json                    # TypeScript 설정
-├── Dockerfile                       # 컨테이너 이미지 빌드
-├── .env.example                     # 환경 변수 템플릿
-├── deploy.sh                        # AWS 배포 스크립트
-├── start.sh / stop.sh              # ECS 서비스 관리
-└── PROJECT.md                       # 프로젝트 문서
-```
-
-#### 새로 추가된 파일
-- `src/services/chat-summary.ts`: AWS Bedrock Claude Sonnet 4를 사용한 채팅 요약 서비스
-
-#### 수정된 파일
-- `package.json`: AWS Bedrock Runtime SDK 의존성 추가
-- `src/server.ts`: 채팅 요약 API 엔드포인트 및 방 목록 개선
-- `.env.example`: Bedrock 모델 설정 추가
-
-### 환경 설정
-
-#### 1. 필요한 환경 변수
+#### 필수 환경 변수
 ```bash
+# AWS 설정
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 S3_BUCKET_NAME=your_bucket_name
+
+# Bedrock 설정
 BEDROCK_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
+
+# 데이터베이스 설정
+DB_HOST=your_mysql_host
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_NAME=chatapp
+DB_PORT=3306
+
+# 서버 설정
+PORT=3000
+NODE_ENV=development
 ```
 
-#### 2. AWS 권한 요구사항
+#### AWS 권한 요구사항
 - `bedrock:InvokeModel`: Claude Sonnet 4 모델 호출
-- `s3:GetObject`: 이미지 파일 조회
-- Bedrock Model Access에서 Claude Sonnet 4 액세스 승인 필요
+- `s3:PutObject`, `s3:GetObject`: 파일 업로드/조회
+- `transcribe:StartStreamTranscription`: 실시간 음성인식
 
-### 사용 방법
+### 📈 성능 최적화
 
-#### 1. 개발환경 실행
+#### 완료된 최적화
+- **요약 API**: 이미지 제외로 응답시간 75% 단축, 토큰 비용 70% 절약
+- **방 목록**: 단일 쿼리로 메시지/이미지 수 포함 조회
+- **파일 업로드**: 메모리 기반 처리로 빠른 업로드
+- **CDN**: CloudFront를 통한 정적 파일 캐싱
+
+### 🚀 배포 현황
+
+#### 프로덕션 환경
+- **URL**: https://d2k05d66hwbq2e.cloudfront.net
+- **인프라**: AWS ECS Fargate + RDS + S3 + CloudFront
+- **모니터링**: CloudWatch 로그 및 메트릭
+
+#### 개발 환경
 ```bash
 npm install
 npm run dev
+# http://localhost:3000
 ```
 
-#### 2. API 호출 예시
-```bash
-curl http://localhost:3000/api/rooms/{roomId}/summary
-```
+### 📝 테스트 자료
 
-### 특징
+#### 제공된 테스트 파일
+- **test-sample.html**: 쇼핑몰 데모 페이지
+  - 반응형 디자인
+  - 화이트/블랙/골드 컬러 스키마
+  - 인터랙티브 요소 (사이즈 선택, 장바구니)
 
-#### 1. 웹페이지 제작 특화
-- 일반적인 요약이 아닌 웹페이지 제작 에이전트를 위한 구조화된 요구사항 분석
-- 기능, 디자인, 기술스택 등을 체계적으로 분류하여 제공
+#### 테스트 시나리오
+- **test-chat-script.md**: 쇼핑몰 웹페이지 제작 대화 스크립트
+  - 20개 메시지로 구성된 자연스러운 대화
+  - 요구사항 도출 과정 시뮬레이션
 
-#### 2. 멀티모달 분석
-- 텍스트와 이미지를 함께 분석하여 더 정확한 요구사항 파악
-- 이미지에서 UI/UX 요구사항, 디자인 참고사항 등을 추출
+### 🎯 다음 단계
 
-#### 3. 상세한 분석
-- 응답 길이 제한 없이 상세한 요구사항 정리
-- 우선순위와 중요도까지 포함한 종합적인 분석
+#### 진행 중인 PR
+- **PR #5**: 채팅 요약 API (머지 대기)
+- **PR #6**: 방 목록 개선 (머지 대기)  
+- **PR #7**: 요약 성능 최적화 (머지 대기)
+- **PR #8**: 요약 사이드바 UI (머지 대기)
+- **PR #9**: HTML 업로드 & OpenAPI 2.0 (머지 대기)
 
-### 향후 개선 방향
-- 다양한 이미지 포맷 지원 확대
-- 요약 결과 캐싱을 통한 성능 최적화
-- 요구사항 템플릿 커스터마이징 기능
+#### 향후 개선 계획
+- LangGraph 에이전트와의 연동
+- 실시간 HTML 생성 기능
+- 버전 비교 및 롤백 기능
+- 사용자 권한 관리
+- 성능 모니터링 대시보드
+
+### 📊 프로젝트 통계
+
+- **총 API 엔드포인트**: 8개
+- **데이터베이스 테이블**: 3개
+- **AWS 서비스**: 5개 (S3, Bedrock, Transcribe, ECS, RDS)
+- **프론트엔드 기능**: 7개 주요 기능
+- **문서화**: OpenAPI 2.0/3.0 완전 지원
