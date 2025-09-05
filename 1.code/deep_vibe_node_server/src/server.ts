@@ -35,10 +35,11 @@ const htmlUploadService = new HtmlUploadService();
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
-    if (s3UploadService.isImageFile(file.mimetype)) {
+    // 이미지 파일 또는 HTML 파일 허용
+    if (s3UploadService.isImageFile(file.mimetype) || file.mimetype === 'text/html' || file.originalname.toLowerCase().endsWith('.html')) {
       cb(null, true);
     } else {
-      cb(new Error("이미지 파일만 업로드 가능합니다."));
+      cb(new Error("이미지 파일 또는 HTML 파일만 업로드 가능합니다."));
     }
   },
   limits: {
