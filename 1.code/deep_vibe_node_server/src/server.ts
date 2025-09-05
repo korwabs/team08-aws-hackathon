@@ -671,13 +671,13 @@ io.on("connection", (socket) => {
 
     // 너무 많은 로그를 방지하기 위해 10초마다 한 번씩만 로그
     if (
-      !socket.lastAudioLogTime ||
-      Date.now() - socket.lastAudioLogTime > 10000
+      !(socket as any).lastAudioLogTime ||
+      Date.now() - (socket as any).lastAudioLogTime > 10000
     ) {
       console.log(
         `🔊 [audio-data] Receiving from ${socket.id}: ${dataSize} bytes/chunk (room: ${roomId})`
       );
-      socket.lastAudioLogTime = Date.now();
+      (socket as any).lastAudioLogTime = Date.now();
     }
 
     try {
@@ -733,7 +733,7 @@ io.on("connection", (socket) => {
       reason,
       roomId,
       userId,
-      duration: Date.now() - socket.handshake.time,
+      duration: Date.now() - (Number(socket.handshake.time) || Date.now()),
     });
 
     if (roomId) {
