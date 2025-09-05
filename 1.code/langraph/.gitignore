@@ -4,6 +4,13 @@
 # Reference documentation
 ref_docs/
 
+# Output files (keep folder structure but ignore contents)
+outputs/prd_documents/*.md
+outputs/html_applications/*.html
+!outputs/prd_documents/.gitkeep
+!outputs/html_applications/.gitkeep
+!outputs/README.md
+
 # Python cache
 __pycache__/
 *.pyc
