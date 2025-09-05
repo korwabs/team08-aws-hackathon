@@ -18,15 +18,26 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
 ### 클라이언트 → 서버
 - **join-room**: 채팅방 입장 { roomId, userId }
 - **chat-message**: 메시지 전송 { roomId, userId, message }
-- **start-transcribe**: 음성인식 시작 { roomId, userId }
-- **audio-data**: 오디오 데이터 전송 { audio: ArrayBuffer }
-- **stop-transcribe**: 음성인식 중지
+- **start-transcribe**: 실시간 음성인식 시작 { roomId, userId }
+- **audio-data**: 실시간 오디오 데이터 전송 { audio: ArrayBuffer }
+- **stop-transcribe**: 실시간 음성인식 중지
+- **start-file-recording**: 파일 기반 녹음 시작
+- **audio-chunk**: 파일 기반 오디오 청크 전송 { chunk: ArrayBuffer }
+- **stop-file-recording**: 파일 기반 녹음 중지 및 STT 처리
 
 ### 서버 → 클라이언트  
 - **message-received**: 새 메시지 수신
-- **transcription-result**: 음성인식 결과
+- **transcription-result**: 실시간 음성인식 결과
+- **chat-message**: 채팅 메시지 브로드캐스트
+- **file-transcribe-complete**: 파일 STT 처리 완료
+- **file-transcribe-error**: 파일 STT 처리 오류
 - **user-joined**: 사용자 입장
 - **user-left**: 사용자 퇴장
+
+## 성능 최적화
+- **실시간 STT**: 1024 샘플(64ms) 청크로 지연시간 최소화
+- **파일 STT**: S3 업로드 후 Amazon Transcribe 배치 처리
+- **PCM 검증**: 단일 채널 PCM 데이터 무결성 확인
       `,
     },
     servers: [

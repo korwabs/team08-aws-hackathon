@@ -14,8 +14,10 @@
 
 #### 2. AWS Transcribe 음성인식
 - **실시간 스트리밍**: 마이크 입력을 실시간으로 텍스트 변환
+- **파일 기반 STT**: 녹음 완료 후 S3 업로드 → Transcribe 배치 처리
 - **WebSocket 연동**: 음성인식 결과를 채팅으로 자동 저장
 - **오디오 시각화**: 실시간 오디오 파형 표시
+- **성능 최적화**: AWS 모범사례 적용 (64ms 청크, PCM 검증)
 
 #### 3. 이미지 업로드 시스템
 - **S3 연동**: AWS S3를 통한 이미지 저장
@@ -46,7 +48,26 @@
 - **Swagger UI**: `/api-docs` 인터랙티브 문서
 - **외부 연동**: Postman, Insomnia 등 도구 지원
 
-### 📋 API 엔드포인트 현황
+### 🔌 WebSocket 이벤트
+
+#### 클라이언트 → 서버
+- `join-room`: 채팅방 입장
+- `chat-message`: 메시지 전송
+- `start-transcribe`: 실시간 음성인식 시작
+- `audio-data`: 실시간 오디오 데이터 전송
+- `stop-transcribe`: 실시간 음성인식 중지
+- `start-file-recording`: 파일 기반 녹음 시작
+- `audio-chunk`: 파일 기반 오디오 청크 전송
+- `stop-file-recording`: 파일 기반 녹음 중지 및 STT 처리
+
+#### 서버 → 클라이언트
+- `message-received`: 새 메시지 수신
+- `transcription-result`: 실시간 음성인식 결과
+- `chat-message`: 채팅 메시지 브로드캐스트
+- `file-transcribe-complete`: 파일 STT 처리 완료
+- `file-transcribe-error`: 파일 STT 처리 오류
+- `user-joined`: 사용자 입장
+- `user-left`: 사용자 퇴장
 
 #### 채팅방 관리
 - `GET /api/rooms`: 채팅방 목록 (메시지/이미지 수 포함)
@@ -129,11 +150,14 @@ CREATE TABLE html_files (
 #### 메인 기능
 - **채팅방 생성/입장**: 드롭다운 선택 및 실시간 목록 업데이트
 - **실시간 채팅**: 텍스트 메시지 송수신
-- **음성인식**: 마이크 버튼으로 음성을 텍스트로 변환
+- **실시간 음성인식**: 마이크 버튼으로 음성을 실시간 텍스트 변환
+- **파일 기반 녹음**: 녹음 완료 후 정확한 STT 처리
 - **이미지 업로드**: 드래그앤드롭 또는 파일 선택
 - **HTML 업로드**: 버전 관리되는 HTML 파일 업로드
 
 #### 새로운 UI 요소
+- **🎤 실시간 음성인식**: 실시간 STT 버튼
+- **📁 파일 녹음**: 파일 기반 STT 버튼
 - **📋 요약 버튼**: 헤더 우측의 요약 기능 버튼
 - **요약 사이드바**: 우측에서 슬라이드되는 요약 패널
 - **📄 HTML 업로드**: HTML 파일 업로드 버튼
@@ -169,10 +193,15 @@ NODE_ENV=development
 - `bedrock:InvokeModel`: Claude Sonnet 4 모델 호출
 - `s3:PutObject`, `s3:GetObject`: 파일 업로드/조회
 - `transcribe:StartStreamTranscription`: 실시간 음성인식
+- `transcribe:StartTranscriptionJob`: 파일 기반 음성인식
+- `transcribe:GetTranscriptionJob`: 음성인식 작업 상태 조회
 
 ### 📈 성능 최적화
 
 #### 완료된 최적화
+- **실시간 STT**: 청크 크기 최적화 (256ms → 64ms, 75% 지연시간 감소)
+- **PCM 검증**: 단일 채널 PCM 데이터 무결성 확인
+- **파일 STT**: S3 업로드 후 배치 처리로 정확도 향상
 - **요약 API**: 이미지 제외로 응답시간 75% 단축, 토큰 비용 70% 절약
 - **방 목록**: 단일 쿼리로 메시지/이미지 수 포함 조회
 - **파일 업로드**: 메모리 기반 처리로 빠른 업로드
@@ -213,6 +242,7 @@ npm run dev
 - **PR #7**: 요약 성능 최적화 (머지 대기)
 - **PR #8**: 요약 사이드바 UI (머지 대기)
 - **PR #9**: HTML 업로드 & OpenAPI 2.0 (머지 대기)
+- **PR #23**: STT 성능 최적화 & 파일 기반 STT (리뷰 중)
 
 #### 향후 개선 계획
 - LangGraph 에이전트와의 연동

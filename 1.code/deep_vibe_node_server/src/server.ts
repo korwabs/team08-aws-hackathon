@@ -16,6 +16,7 @@ import { specs, swagger2Specs } from "./swagger";
 import { S3UploadService } from "./services/s3-upload.service";
 import ChatSummaryService from "./services/chat-summary";
 import { HtmlUploadService } from "./services/html-upload.service";
+import FileTranscribeService from "./file-transcribe-service";
 
 const app = express();
 const server = createServer(app);
@@ -27,6 +28,7 @@ const io = new Server(server, {
 });
 
 const transcribeService = new TranscribeService();
+const fileTranscribeService = new FileTranscribeService();
 const s3UploadService = new S3UploadService();
 const chatSummaryService = new ChatSummaryService();
 const htmlUploadService = new HtmlUploadService();
@@ -723,6 +725,84 @@ io.on("connection", (socket) => {
       userId: userId,
       roomId: (socket as any).roomId,
     });
+  });
+
+  // 파일 기반 녹음 시작
+  socket.on("start-file-recording", () => {
+    console.log(`🎙️ [start-file-recording] Socket ${socket.id} started file recording`);
+    (socket as any).audioChunks = [];
+    (socket as any).isRecording = true;
+  });
+
+  // 오디오 청크 수신
+  socket.on("audio-chunk", (chunk: Buffer) => {
+    if ((socket as any).isRecording) {
+      if (!(socket as any).audioChunks) {
+        (socket as any).audioChunks = [];
+      }
+      (socket as any).audioChunks.push(chunk);
+    }
+  });
+
+  // 파일 기반 녹음 중지 및 STT 처리
+  socket.on("stop-file-recording", async () => {
+    const roomId = (socket as any).roomId;
+    const userId = (socket as any).userId || "anonymous";
+    const audioChunks = (socket as any).audioChunks || [];
+
+    console.log(`🛑 [stop-file-recording] Socket ${socket.id} stopped recording`);
+    (socket as any).isRecording = false;
+
+    if (!roomId || audioChunks.length === 0) {
+      socket.emit("file-transcribe-error", { error: "No audio data or room" });
+      return;
+    }
+
+    try {
+      // 오디오 청크들을 하나의 버퍼로 합치기
+      const audioBuffer = Buffer.concat(audioChunks);
+      const fileName = `${roomId}-${Date.now()}.wav`;
+
+      // STT 처리
+      const recordingStartTime = new Date();
+      const segments = await fileTranscribeService.transcribeAudioFile(audioBuffer, fileName);
+      console.log(`📝 [file-transcribe] Segment results:`, segments);
+
+      // 각 세그먼트를 개별 메시지로 저장
+      for (const segment of segments) {
+        if (segment.transcript.trim()) {
+          // 세그먼트 종료 시간을 기준으로 실제 메시지 시간 계산
+          const segmentEndSeconds = parseFloat(segment.end_time);
+          const messageTime = new Date(recordingStartTime.getTime() + (segmentEndSeconds * 1000));
+          const mysqlTime = messageTime.toISOString().slice(0, 19).replace('T', ' ');
+          
+          const [result]: any = await db.execute(
+            "INSERT INTO messages (room_id, user_id, message, message_type, created_at) VALUES (?, ?, ?, ?, ?)",
+            [roomId, userId, segment.transcript, "text", mysqlTime]
+          );
+
+          // 채팅방의 모든 사용자에게 메시지 전송
+          io.to(roomId).emit("chat-message", {
+            id: result.insertId,
+            userId,
+            message: segment.transcript,
+            messageType: "text",
+            timestamp: messageTime.toISOString(),
+          });
+
+          console.log(`✅ [file-transcribe] Segment saved: "${segment.transcript}" at ${messageTime.toISOString()}`);
+        }
+      }
+
+      // 클라이언트에 완료 알림
+      socket.emit("file-transcribe-complete");
+
+      // 오디오 청크 초기화
+      (socket as any).audioChunks = [];
+    } catch (error: any) {
+      console.error(`❌ [file-transcribe] Error:`, error);
+      socket.emit("file-transcribe-error", { error: error.message });
+    }
   });
 
   socket.on("disconnect", (reason) => {
