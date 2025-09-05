@@ -35,11 +35,25 @@ const htmlUploadService = new HtmlUploadService();
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
-    // 이미지 파일 또는 HTML 파일 허용
-    if (s3UploadService.isImageFile(file.mimetype) || file.mimetype === 'text/html' || file.originalname.toLowerCase().endsWith('.html')) {
+    if (s3UploadService.isImageFile(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("이미지 파일 또는 HTML 파일만 업로드 가능합니다."));
+      cb(new Error("이미지 파일만 업로드 가능합니다."));
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB 제한
+  },
+});
+
+// HTML 파일 전용 Multer 설정
+const htmlUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/html' || file.originalname.toLowerCase().endsWith('.html')) {
+      cb(null, true);
+    } else {
+      cb(new Error("HTML 파일만 업로드 가능합니다."));
     }
   },
   limits: {
@@ -331,7 +345,7 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
  *       200:
  *         description: HTML 파일 업로드 성공
  */
-app.post("/api/rooms/:roomId/html", upload.single("html"), async (req, res) => {
+app.post("/api/rooms/:roomId/html", htmlUpload.single("html"), async (req, res) => {
   try {
     const { roomId } = req.params;
     const { userId } = req.body;
