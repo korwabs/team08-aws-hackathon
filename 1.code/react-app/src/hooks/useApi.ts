@@ -21,7 +21,7 @@ export const useCreateRoom = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: { name: string }) => api.createRoom(data),
+    mutationFn: (data: { name: string; participants?: number }) => api.createRoom(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.rooms })
     },

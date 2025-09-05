@@ -8,7 +8,7 @@ export const api = {
     return response.json()
   },
 
-  createRoom: async (data: { name: string }) => {
+  createRoom: async (data: { name: string; participants?: number }) => {
     const response = await fetch(`${API_BASE_URL}/api/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
