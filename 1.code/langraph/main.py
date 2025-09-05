@@ -4,6 +4,8 @@ LangGraph 에이전트 워크플로우 메인 실행 파일
 from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END, START
 from typing import TypedDict, List
+from pathlib import Path
+from datetime import datetime
 import os
 
 # 환경 변수 로드
@@ -18,23 +20,77 @@ class AgentState(TypedDict):
     test_result: str
     messages: List[str]
 
+def save_prd_result(prd_content: str, filename: str = None) -> str:
+    """PRD 결과물을 prd_documents 폴더에 저장"""
+    if not filename:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"prd_{timestamp}.md"
+    
+    output_dir = Path("outputs/prd_documents")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    file_path = output_dir / filename
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(prd_content)
+    
+    print(f"📄 PRD 저장: {file_path}")
+    return str(file_path)
+
+def save_html_result(html_content: str, filename: str = None) -> str:
+    """최종 HTML 결과물을 html_applications 폴더에 저장"""
+    if not filename:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"app_{timestamp}.html"
+    
+    output_dir = Path("outputs/html_applications")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    file_path = output_dir / filename
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"🌐 HTML 앱 저장: {file_path}")
+    return str(file_path)
+
+def enhanced_prd_generator(state):
+    """PRD 생성 후 파일 저장"""
+    from agents.prd_generator.agent import generate_prd
+    
+    result_state = generate_prd(state)
+    
+    # PRD 결과물 저장
+    if result_state.get("prd"):
+        save_prd_result(result_state["prd"])
+    
+    return result_state
+
+def enhanced_html_tester(state):
+    """HTML 테스트 후 최종 HTML 파일 저장"""
+    from agents.html_tester.agent import test_html
+    
+    result_state = test_html(state)
+    
+    # 최종 HTML 결과물 저장 (리뷰된 HTML 기반)
+    if result_state.get("reviewed_html"):
+        save_html_result(result_state["reviewed_html"])
+    
+    return result_state
+
 def create_workflow():
     """LangGraph 워크플로우 생성"""
     workflow = StateGraph(AgentState)
     
     # 에이전트 함수들 import
-    from agents.prd_generator.agent import generate_prd
     from agents.html_generator.agent import generate_html
     from agents.code_reviewer.agent import review_code
-    from agents.html_tester.agent import test_html
     
-    # 노드 추가
-    workflow.add_node("prd_generator", generate_prd)
+    # 노드 추가 (PRD와 HTML Tester는 향상된 버전 사용)
+    workflow.add_node("prd_generator", enhanced_prd_generator)
     workflow.add_node("html_generator", generate_html)
     workflow.add_node("code_reviewer", review_code)
-    workflow.add_node("html_tester", test_html)
+    workflow.add_node("html_tester", enhanced_html_tester)
     
-    # 워크플로우 연결 (agent_rule.md 규칙 준수)
+    # 워크플로우 연결
     workflow.add_edge(START, "prd_generator")
     workflow.add_edge("prd_generator", "html_generator")
     workflow.add_edge("html_generator", "code_reviewer")
