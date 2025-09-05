@@ -32,12 +32,21 @@ export class HtmlUploadService {
   }
 
   async getNextVersion(roomId: string): Promise<number> {
-    const [rows] = await pool.execute(
-      'SELECT MAX(version) as max_version FROM html_files WHERE room_id = ?',
-      [roomId]
-    );
-    const result = rows as any[];
-    return (result[0]?.max_version || 0) + 1;
+    try {
+      const [rows] = await pool.execute(
+        'SELECT MAX(version) as max_version FROM html_files WHERE room_id = ?',
+        [roomId]
+      );
+      const result = rows as any[];
+      return (result[0]?.max_version || 0) + 1;
+    } catch (error: any) {
+      console.error('Error getting next version:', error);
+      // html_files 테이블이 없는 경우 1을 반환
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        return 1;
+      }
+      throw error;
+    }
   }
 
   async uploadHtml(
@@ -45,46 +54,60 @@ export class HtmlUploadService {
     file: Express.Multer.File,
     uploadedBy: string
   ): Promise<HtmlUploadResult> {
-    const version = await this.getNextVersion(roomId);
-    const fileExtension = '.html';
-    const s3Key = `html/${roomId}/v${version}_${uuidv4()}${fileExtension}`;
-    
-    // S3에 파일 업로드
-    const uploadCommand = new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: s3Key,
-      Body: file.buffer,
-      ContentType: 'text/html',
-      ACL: 'public-read'
-    });
+    try {
+      const version = await this.getNextVersion(roomId);
+      const fileExtension = '.html';
+      const s3Key = `html/${roomId}/v${version}_${uuidv4()}${fileExtension}`;
+      
+      // S3에 파일 업로드
+      const uploadCommand = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: s3Key,
+        Body: file.buffer,
+        ContentType: 'text/html',
+        ACL: 'public-read'
+      });
 
-    await this.s3Client.send(uploadCommand);
-    
-    const s3Url = `https://${this.bucketName}.s3.amazonaws.com/${s3Key}`;
+      await this.s3Client.send(uploadCommand);
+      
+      const s3Url = `https://${this.bucketName}.s3.amazonaws.com/${s3Key}`;
 
-    // 데이터베이스에 파일 정보 저장
-    const [result] = await pool.execute(
-      `INSERT INTO html_files (room_id, filename, s3_key, s3_url, version, file_size, uploaded_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [roomId, file.originalname, s3Key, s3Url, version, file.size, uploadedBy]
-    );
+      // 데이터베이스에 파일 정보 저장
+      const [result] = await pool.execute(
+        `INSERT INTO html_files (room_id, filename, s3_key, s3_url, version, file_size, uploaded_by) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [roomId, file.originalname, s3Key, s3Url, version, file.size, uploadedBy]
+      );
 
-    const insertResult = result as any;
+      const insertResult = result as any;
 
-    return {
-      id: insertResult.insertId,
-      filename: file.originalname,
-      s3Url,
-      version,
-      fileSize: file.size
-    };
+      return {
+        id: insertResult.insertId,
+        filename: file.originalname,
+        s3Url,
+        version,
+        fileSize: file.size
+      };
+    } catch (error: any) {
+      console.error('HTML upload service error:', error);
+      throw new Error(`HTML 파일 업로드 실패: ${error.message}`);
+    }
   }
 
   async getHtmlFiles(roomId: string): Promise<HtmlFile[]> {
-    const [rows] = await pool.execute(
-      'SELECT * FROM html_files WHERE room_id = ? ORDER BY version DESC',
-      [roomId]
-    );
-    return rows as HtmlFile[];
+    try {
+      const [rows] = await pool.execute(
+        'SELECT * FROM html_files WHERE room_id = ? ORDER BY version DESC',
+        [roomId]
+      );
+      return rows as HtmlFile[];
+    } catch (error: any) {
+      console.error('Error getting HTML files:', error);
+      // html_files 테이블이 없는 경우 빈 배열 반환
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        return [];
+      }
+      throw error;
+    }
   }
 }
