@@ -175,15 +175,16 @@ app.get("/api/rooms", async (req, res) => {
  *                   type: string
  */
 app.post("/api/rooms", async (req, res) => {
-  const { name } = req.body;
+  const { name, participants = 1 } = req.body;
   const roomId = uuidv4();
 
   try {
-    await db.execute("INSERT INTO chat_rooms (id, name) VALUES (?, ?)", [
+    await db.execute("INSERT INTO chat_rooms (id, name, participants) VALUES (?, ?, ?)", [
       roomId,
       name,
+      participants,
     ]);
-    res.json({ id: roomId, name });
+    res.json({ id: roomId, name, participants });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -44,6 +44,7 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
           properties: {
             id: { type: 'string' },
             name: { type: 'string' },
+            participants: { type: 'integer' },
             created_at: { type: 'string', format: 'date-time' }
           }
         },
@@ -62,7 +63,8 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
           type: 'object',
           required: ['name'],
           properties: {
-            name: { type: 'string' }
+            name: { type: 'string' },
+            participants: { type: 'integer', default: 1, minimum: 1 }
           }
         }
       }
@@ -93,6 +95,7 @@ const swagger2Options = {
         properties: {
           id: { type: 'string' },
           name: { type: 'string' },
+          participants: { type: 'integer' },
           created_at: { type: 'string', format: 'date-time' },
           message_count: { type: 'integer' },
           image_count: { type: 'integer' }
@@ -159,7 +162,8 @@ const swagger2Options = {
             schema: {
               type: 'object',
               properties: {
-                name: { type: 'string' }
+                name: { type: 'string' },
+                participants: { type: 'integer', default: 1, minimum: 1 }
               }
             }
           }],

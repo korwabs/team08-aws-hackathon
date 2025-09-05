@@ -181,6 +181,8 @@ async function loadRooms() {
 
 async function createRoom() {
     const roomName = document.getElementById('roomName').value.trim();
+    const participants = parseInt(document.getElementById('participants').value) || 1;
+    
     if (!roomName) {
         alert('채팅방 이름을 입력하세요.');
         return;
@@ -190,13 +192,14 @@ async function createRoom() {
         const response = await fetch('/api/rooms', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: roomName })
+            body: JSON.stringify({ name: roomName, participants })
         });
         
         const room = await response.json();
         document.getElementById('roomName').value = '';
+        document.getElementById('participants').value = '1';
         loadRooms();
-        showStatus(`채팅방 "${room.name}"이 생성되었습니다.`);
+        showStatus(`채팅방 "${room.name}" (${room.participants}명)이 생성되었습니다.`);
     } catch (error) {
         console.error('Failed to create room:', error);
     }

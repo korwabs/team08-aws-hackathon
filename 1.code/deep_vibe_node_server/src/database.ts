@@ -37,6 +37,7 @@ async function initializeDatabase(): Promise<void> {
       CREATE TABLE IF NOT EXISTS chat_rooms (
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        participants INT DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
