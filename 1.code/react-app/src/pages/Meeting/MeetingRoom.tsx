@@ -66,10 +66,6 @@ export default function MeetingRoom({ meetingId }: MeetingRoomProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                Recording
-              </Badge>
               <Button variant="outline" size="sm">
                 <Share className="w-4 h-4 mr-2" />
                 Share
