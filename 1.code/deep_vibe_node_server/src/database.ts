@@ -37,9 +37,24 @@ async function initializeDatabase(): Promise<void> {
       CREATE TABLE IF NOT EXISTS chat_rooms (
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        participants INT DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // 기존 테이블에 participants 컬럼 추가 (없는 경우에만)
+    try {
+      await pool.execute(`
+        ALTER TABLE chat_rooms 
+        ADD COLUMN participants INT DEFAULT 1
+      `);
+      console.log('Added participants column to chat_rooms table');
+    } catch (error: any) {
+      // 컬럼이 이미 존재하는 경우 무시
+      if (!error.message.includes('Duplicate column name')) {
+        console.error('Error adding participants column:', error.message);
+      }
+    }
 
     // 채팅 메시지 테이블
     await pool.execute(`
