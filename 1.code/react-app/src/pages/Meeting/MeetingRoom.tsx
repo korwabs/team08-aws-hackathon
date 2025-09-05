@@ -8,7 +8,6 @@ import {
 import VoicePanel from './VoicePanel'
 import DemoPanel from './DemoPanel'
 import FloatingDemoButton from './FloatingDemoButton'
-import ImageUploadModal from './ImageUploadModal'
 
 interface MeetingRoomProps {
   meetingId: string
@@ -17,7 +16,7 @@ interface MeetingRoomProps {
 export default function MeetingRoom({ meetingId }: MeetingRoomProps) {
   const [currentView, setCurrentView] = useState<'dashboard' | 'demo'>('dashboard')
   const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null)
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const userId = 'user-' + Date.now() // 임시 사용자 ID
 
   const handleCreateMeeting = (roomId: string) => {
     setCurrentMeetingId(roomId)
@@ -88,16 +87,12 @@ export default function MeetingRoom({ meetingId }: MeetingRoomProps) {
         </div>
 
         {/* 플로팅 데모 생성 버튼 */}
-        <FloatingDemoButton 
-          onClick={() => setIsUploadModalOpen(true)}
-        />
-
-        {/* 이미지 업로드 모달 */}
-        <ImageUploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-          meetingId={currentMeetingId || meetingId}
-        />
+        {currentMeetingId && (
+          <FloatingDemoButton 
+            meetingId={currentMeetingId}
+            userId={userId}
+          />
+        )}
       </div>
     </div>
   )
