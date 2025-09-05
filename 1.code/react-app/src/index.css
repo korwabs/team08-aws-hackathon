@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Lilys AI Color Palette - Using HSL values for Tailwind CSS */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 9%;
+    --primary: 242 89% 69%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 240 6% 32%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 44%;
+    --accent: 235 100% 97%;
+    --accent-foreground: 240 10% 9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 242 89% 69%;
+    --radius: 8px;
+  }
+
+  .dark {
+    --background: 240 10% 9%;
+    --foreground: 0 0% 100%;
+    --card: 240 10% 9%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 10% 9%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 242 89% 69%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 32%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 6% 32%;
+    --muted-foreground: 240 5% 63%;
+    --accent: 240 6% 32%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 32%;
+    --input: 240 6% 32%;
+    --ring: 242 89% 69%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: Pretendard, -apple-system, 'system-ui', 'Segoe UI', Roboto, sans-serif;
+  }
+}
