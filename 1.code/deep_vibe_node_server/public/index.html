@@ -43,6 +43,10 @@
             background: #f3e5f5; margin-right: auto;
             border-bottom-left-radius: 5px;
         }
+        .message.image { 
+            background: #e8f5e8; margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
         .message .user { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
         .message .time { font-size: 11px; color: #666; margin-top: 5px; }
         
@@ -146,6 +150,11 @@
             <div class="input-group">
                 <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
                 <button class="btn btn-primary" onclick="sendMessage()">전송</button>
+            </div>
+            
+            <div class="input-group">
+                <input type="file" id="imageInput" accept="image/*" style="flex: 1;">
+                <button class="btn btn-success" onclick="uploadImage()">📷 이미지 업로드</button>
             </div>
             
             <div class="record-section">

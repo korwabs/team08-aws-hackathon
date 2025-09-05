@@ -265,11 +265,18 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
       {
         Effect = "Allow"
         Action = [
-          "transcribe:*",
-          "s3:GetObject",
-          "s3:PutObject"
+          "transcribe:*"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "${aws_s3_bucket.uploads.arn}/*"
       }
     ]
   })
@@ -305,6 +312,10 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "NODE_ENV"
           value = "production"
+        },
+        {
+          name  = "S3_BUCKET_NAME"
+          value = aws_s3_bucket.uploads.bucket
         },
         {
           name  = "DB_HOST"
