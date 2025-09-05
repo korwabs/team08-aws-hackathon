@@ -255,6 +255,110 @@ function sendMessage() {
     messageInput.value = '';
 }
 
+// HTML 파일 업로드 함수
+async function uploadHtml() {
+    const fileInput = document.getElementById('htmlInput');
+    const userId = document.getElementById('userId').value.trim();
+    
+    if (!currentRoomId) {
+        alert('먼저 채팅방에 입장해주세요.');
+        return;
+    }
+    
+    if (!userId) {
+        alert('사용자 ID를 설정해주세요.');
+        return;
+    }
+    
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('HTML 파일을 선택해주세요.');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    if (!file.name.toLowerCase().endsWith('.html')) {
+        alert('HTML 파일만 업로드 가능합니다.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('html', file);
+    formData.append('userId', userId);
+    
+    try {
+        const response = await fetch(`/api/rooms/${currentRoomId}/html`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert(`HTML 파일이 업로드되었습니다! (버전: ${result.version})`);
+            fileInput.value = '';
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('HTML upload error:', error);
+        alert('HTML 파일 업로드에 실패했습니다: ' + error.message);
+    }
+}
+
+// HTML 파일 목록 조회 함수
+async function viewHtmlFiles() {
+    if (!currentRoomId) {
+        alert('먼저 채팅방에 입장해주세요.');
+        return;
+    }
+    
+    const modal = document.getElementById('htmlFilesModal');
+    const filesList = document.getElementById('htmlFilesList');
+    
+    modal.style.display = 'flex';
+    filesList.innerHTML = '<p>로딩 중...</p>';
+    
+    try {
+        const response = await fetch(`/api/rooms/${currentRoomId}/html`);
+        const htmlFiles = await response.json();
+        
+        if (response.ok) {
+            if (htmlFiles.length === 0) {
+                filesList.innerHTML = '<p>업로드된 HTML 파일이 없습니다.</p>';
+            } else {
+                filesList.innerHTML = htmlFiles.map(file => `
+                    <div class="html-file-item">
+                        <div class="html-file-info">
+                            <div style="font-weight: bold;">${file.filename}</div>
+                            <div style="font-size: 12px; color: #666;">
+                                ${new Date(file.created_at).toLocaleString()} | 
+                                ${(file.file_size / 1024).toFixed(1)}KB | 
+                                업로드: ${file.uploaded_by}
+                            </div>
+                        </div>
+                        <div class="html-file-actions">
+                            <span class="html-file-version">v${file.version}</span>
+                            <button class="btn btn-primary" onclick="window.open('${file.s3_url}', '_blank')" style="padding: 5px 10px; font-size: 12px;">
+                                🔗 열기
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } else {
+            throw new Error(htmlFiles.error);
+        }
+    } catch (error) {
+        console.error('HTML files fetch error:', error);
+        filesList.innerHTML = `<p style="color: #f44336;">파일 목록을 가져오는데 실패했습니다: ${error.message}</p>`;
+    }
+}
+
+// HTML 모달 닫기 함수
+function closeHtmlModal() {
+    document.getElementById('htmlFilesModal').style.display = 'none';
+}
+
 // 파일 업로드 함수
 async function uploadImage() {
     const fileInput = document.getElementById('imageInput');
