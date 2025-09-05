@@ -1,26 +1,30 @@
-from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
+"""
+PRD 생성기 에이전트
+"""
+from typing import Dict, Any
+from core.base_agent import BaseAgent
 
-def generate_prd(state):
-    """Product Requirements Document 생성"""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+class PRDGeneratorAgent(BaseAgent):
+    """Product Requirements Document 생성 에이전트"""
     
-    prompt = f"""
-    다음 요약 정보를 바탕으로 Product Requirements Document(PRD)를 작성해주세요:
+    def __init__(self):
+        super().__init__("prd_generator")
     
-    요약 정보: {state.get('summary', '')}
-    
-    PRD에 포함할 내용:
-    1. 제품 개요
-    2. 기능 요구사항
-    3. 사용자 스토리
-    4. 기술적 요구사항
-    5. UI/UX 가이드라인
-    """
-    
-    response = llm.invoke([HumanMessage(content=prompt)])
-    
-    state["prd"] = response.content
-    state["messages"].append(f"PRD 생성 완료: {len(response.content)} 문자")
-    
-    return state
+    def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """PRD 생성 실행"""
+        input_data = state.get("input_data", "")
+        
+        # 모델 호출하여 PRD 생성
+        prd_content = self.invoke_model(state, input_data=input_data)
+        
+        # 상태 업데이트
+        state["prd"] = prd_content
+        
+        return state
+
+# 에이전트 인스턴스
+prd_agent = PRDGeneratorAgent()
+
+def generate_prd(state: Dict[str, Any]) -> Dict[str, Any]:
+    """LangGraph 노드 함수"""
+    return prd_agent.execute(state)

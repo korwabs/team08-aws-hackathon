@@ -1,30 +1,30 @@
-from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
+"""
+코드 리뷰어 에이전트
+"""
+from typing import Dict, Any
+from core.base_agent import BaseAgent
 
-def review_code(state):
-    """생성된 HTML 코드를 리뷰하고 수정"""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+class CodeReviewerAgent(BaseAgent):
+    """코드 리뷰 에이전트"""
     
-    prompt = f"""
-    다음 HTML 코드를 리뷰하고 개선된 버전을 제공해주세요:
+    def __init__(self):
+        super().__init__("code_reviewer")
     
-    HTML 코드:
-    {state.get('html_code', '')}
-    
-    리뷰 기준:
-    - 코드 품질 및 구조
-    - 웹 표준 준수
-    - 접근성 개선
-    - 성능 최적화
-    - 보안 고려사항
-    - 브라우저 호환성
-    
-    개선된 HTML 코드를 제공해주세요.
-    """
-    
-    response = llm.invoke([HumanMessage(content=prompt)])
-    
-    state["reviewed_html"] = response.content
-    state["messages"].append(f"코드 리뷰 완료: 개선사항 적용됨")
-    
-    return state
+    def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """코드 리뷰 실행"""
+        html_code = state.get("html_code", "")
+        
+        # 모델 호출하여 코드 리뷰
+        reviewed_content = self.invoke_model(state, html_code=html_code)
+        
+        # 상태 업데이트
+        state["reviewed_html"] = reviewed_content
+        
+        return state
+
+# 에이전트 인스턴스
+reviewer_agent = CodeReviewerAgent()
+
+def review_code(state: Dict[str, Any]) -> Dict[str, Any]:
+    """LangGraph 노드 함수"""
+    return reviewer_agent.execute(state)
