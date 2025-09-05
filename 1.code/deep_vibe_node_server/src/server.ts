@@ -14,6 +14,7 @@ import db from "./database";
 import TranscribeService from "./transcribe-service";
 import { specs } from "./swagger";
 import { S3UploadService } from "./services/s3-upload.service";
+import ChatSummaryService from "./services/chat-summary";
 
 const app = express();
 const server = createServer(app);
@@ -26,6 +27,7 @@ const io = new Server(server, {
 
 const transcribeService = new TranscribeService();
 const s3UploadService = new S3UploadService();
+const chatSummaryService = new ChatSummaryService();
 
 // Multer 설정 (메모리 저장)
 const upload = multer({
@@ -275,6 +277,51 @@ app.get("/api/rooms/:roomId/messages", async (req, res) => {
       imageUrls: imageUrls,
     });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/summary:
+ *   get:
+ *     summary: 채팅방 대화 요약
+ *     description: AWS Bedrock Claude Sonnet을 사용하여 채팅방의 대화 내용을 요약합니다
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채팅방 ID
+ *     responses:
+ *       200:
+ *         description: 채팅 요약 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 summary:
+ *                   type: string
+ *                   description: 대화 요약 내용
+ *                 messageCount:
+ *                   type: number
+ *                   description: 텍스트 메시지 수
+ *                 imageCount:
+ *                   type: number
+ *                   description: 이미지 메시지 수
+ *       500:
+ *         description: 서버 오류
+ */
+app.get("/api/rooms/:roomId/summary", async (req, res) => {
+  const { roomId } = req.params;
+  
+  try {
+    const summary = await chatSummaryService.summarizeChat(roomId);
+    res.json(summary);
+  } catch (error: any) {
+    console.error("Chat summary error:", error);
     res.status(500).json({ error: error.message });
   }
 });
