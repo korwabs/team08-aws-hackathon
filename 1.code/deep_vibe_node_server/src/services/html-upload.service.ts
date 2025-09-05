@@ -64,8 +64,7 @@ export class HtmlUploadService {
         Bucket: this.bucketName,
         Key: s3Key,
         Body: file.buffer,
-        ContentType: 'text/html',
-        ACL: 'public-read'
+        ContentType: 'text/html'
       });
 
       await this.s3Client.send(uploadCommand);
