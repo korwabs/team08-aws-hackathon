@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 채팅 & 음성인식</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 900px; margin: 0 auto; 
+            background: white; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white; padding: 20px; text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 20px; }
+        
+        .chat-container { 
+            border: 2px solid #e1e8ed; height: 400px; overflow-y: auto; 
+            padding: 15px; margin: 15px 0; border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .message { 
+            margin: 8px 0; padding: 10px 15px; border-radius: 18px; 
+            max-width: 70%; word-wrap: break-word;
+        }
+        .message.text { 
+            background: #e3f2fd; margin-left: auto; 
+            border-bottom-right-radius: 5px;
+        }
+        .message.transcribe { 
+            background: #f3e5f5; margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+        .message .user { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
+        .message .time { font-size: 11px; color: #666; margin-top: 5px; }
+        
+        .input-group { 
+            display: flex; margin: 15px 0; gap: 10px; align-items: center;
+        }
+        .input-group input, .input-group select { 
+            flex: 1; padding: 12px; border: 2px solid #e1e8ed; 
+            border-radius: 25px; outline: none; font-size: 14px;
+        }
+        .input-group input:focus, .input-group select:focus {
+            border-color: #4facfe;
+        }
+        .btn { 
+            padding: 12px 20px; border: none; border-radius: 25px; 
+            cursor: pointer; font-weight: bold; transition: all 0.3s;
+        }
+        .btn-primary { background: #4facfe; color: white; }
+        .btn-primary:hover { background: #2196f3; transform: translateY(-2px); }
+        .btn-success { background: #4caf50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        
+        .controls { margin: 20px 0; text-align: center; }
+        .record-section {
+            background: #f8f9fa; padding: 20px; border-radius: 15px;
+            margin: 20px 0; text-align: center;
+        }
+        
+        #recordBtn { 
+            font-size: 18px; padding: 15px 30px; 
+            border-radius: 50px; transition: all 0.3s;
+        }
+        #recordBtn.recording { 
+            background: #f44336; animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .visualizer-container {
+            margin: 20px 0; display: none;
+        }
+        #audioVisualizer {
+            width: 100%; height: 100px; 
+            background: #000; border-radius: 10px;
+        }
+        
+        .status { 
+            padding: 15px; margin: 15px 0; border-radius: 10px; 
+            text-align: center; font-weight: bold;
+        }
+        .status.recording { background: #ffebee; color: #c62828; }
+        .status.transcribing { background: #e8f5e8; color: #2e7d32; }
+        
+        #transcribeResult { 
+            margin: 15px 0; padding: 15px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-radius: 10px; display: none;
+        }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .container { margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 실시간 채팅 & 음성인식</h1>
+        </div>
+        
+        <div class="content">
+            <div class="grid">
+                <div class="input-group">
+                    <input type="text" id="roomName" placeholder="채팅방 이름">
+                    <button class="btn btn-primary" onclick="createRoom()">생성</button>
+                </div>
+                
+                <div class="input-group">
+                    <select id="roomSelect">
+                        <option value="">채팅방 선택</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="joinRoom()">입장</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="userId" placeholder="사용자 ID" value="user1">
+                <button class="btn btn-success" onclick="setUser()">사용자 설정</button>
+            </div>
+
+            <div id="status" class="status" style="display: none;"></div>
+            
+            <div id="chatContainer" class="chat-container"></div>
+            
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+                <button class="btn btn-primary" onclick="sendMessage()">전송</button>
+            </div>
+            
+            <div class="record-section">
+                <button id="recordBtn" class="btn btn-success" onclick="toggleRecording()">
+                    🎤 음성인식 시작
+                </button>
+                <div id="transcribeStatus" style="margin-top: 10px;"></div>
+                
+                <div class="visualizer-container">
+                    <canvas id="audioVisualizer"></canvas>
+                </div>
+            </div>
+            
+            <div id="transcribeResult">
+                <strong>실시간 전사:</strong> <span id="transcribeText"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
