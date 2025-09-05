@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "html-validator": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-html-validator"],
+      "description": "HTML 구문 검증 및 접근성 검사",
+      "tools": [
+        "validate_html",
+        "check_accessibility",
+        "validate_css",
+        "check_seo"
+      ]
+    },
+    "lighthouse": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-lighthouse"],
+      "description": "웹 성능 및 품질 분석",
+      "tools": [
+        "analyze_performance",
+        "audit_accessibility",
+        "check_seo_score",
+        "validate_pwa"
+      ]
+    },
+    "eslint-html": {
+      "command": "npx", 
+      "args": ["@modelcontextprotocol/server-eslint-html"],
+      "description": "JavaScript 코드 품질 검사",
+      "tools": [
+        "lint_javascript",
+        "check_code_quality",
+        "suggest_improvements",
+        "auto_fix_issues"
+      ]
+    }
+  },
+  "toolMappings": {
+    "html_syntax_check": "html-validator/validate_html",
+    "performance_audit": "lighthouse/analyze_performance", 
+    "js_quality_check": "eslint-html/lint_javascript",
+    "accessibility_check": "html-validator/check_accessibility",
+    "seo_validation": "lighthouse/check_seo_score"
+  }
+}
