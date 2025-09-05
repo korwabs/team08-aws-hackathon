@@ -1,0 +1,6 @@
+{"level":"info","message":"Starting MCP server","service":"mcp-puppeteer","timestamp":"2025-09-05 21:49:01.681"}
+{"level":"info","message":"MCP server started successfully","service":"mcp-puppeteer","timestamp":"2025-09-05 21:49:01.682"}
+{"level":"info","message":"Starting MCP server","service":"mcp-puppeteer","timestamp":"2025-09-05 21:50:25.584"}
+{"level":"info","message":"MCP server started successfully","service":"mcp-puppeteer","timestamp":"2025-09-05 21:50:25.586"}
+{"arguments":{"url":"https://annanmode.com/"},"level":"debug","message":"Tool call received","service":"mcp-puppeteer","timestamp":"2025-09-05 21:54:03.083","tool":"puppeteer_navigate"}
+{"0":"n","1":"p","2":"x","level":"info","message":"Launching browser with config:","service":"mcp-puppeteer","timestamp":"2025-09-05 21:54:03.085"}

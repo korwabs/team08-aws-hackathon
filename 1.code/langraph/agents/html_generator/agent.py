@@ -1,26 +1,30 @@
-from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
+"""
+HTML 생성기 에이전트
+"""
+from typing import Dict, Any
+from core.base_agent import BaseAgent
 
-def generate_html(state):
-    """PRD를 바탕으로 HTML 코드 생성"""
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+class HTMLGeneratorAgent(BaseAgent):
+    """HTML 코드 생성 에이전트"""
     
-    prompt = f"""
-    다음 PRD를 바탕으로 완전한 HTML 코드를 생성해주세요:
+    def __init__(self):
+        super().__init__("html_generator")
     
-    PRD: {state.get('prd', '')}
-    
-    생성할 HTML 요구사항:
-    - 완전한 HTML5 문서 구조
-    - 반응형 CSS 포함
-    - 접근성 고려
-    - 모던 웹 표준 준수
-    - 인라인 CSS 및 JavaScript 포함
-    """
-    
-    response = llm.invoke([HumanMessage(content=prompt)])
-    
-    state["html_code"] = response.content
-    state["messages"].append(f"HTML 코드 생성 완료: {len(response.content)} 문자")
-    
-    return state
+    def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        """HTML 생성 실행"""
+        prd = state.get("prd", "")
+        
+        # 모델 호출하여 HTML 생성
+        html_content = self.invoke_model(state, prd=prd)
+        
+        # 상태 업데이트
+        state["html_code"] = html_content
+        
+        return state
+
+# 에이전트 인스턴스
+html_agent = HTMLGeneratorAgent()
+
+def generate_html(state: Dict[str, Any]) -> Dict[str, Any]:
+    """LangGraph 노드 함수"""
+    return html_agent.execute(state)

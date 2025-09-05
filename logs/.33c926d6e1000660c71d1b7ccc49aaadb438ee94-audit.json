@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/choice/git/team08-aws-hackathon/logs/.33c926d6e1000660c71d1b7ccc49aaadb438ee94-audit.json",
+    "files": [
+        {
+            "date": 1757076541636,
+            "name": "/Users/choice/git/team08-aws-hackathon/logs/mcp-puppeteer-2025-09-05.log",
+            "hash": "6eaaf6c6256d589ccb4140679598215af0b991baf88c0d955046eab9107df5a3"
+        }
+    ],
+    "hashType": "sha256"
+}
