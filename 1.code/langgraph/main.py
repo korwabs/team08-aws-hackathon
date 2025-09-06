@@ -101,30 +101,34 @@ async def upload_files_to_nodejs(prd_file_path: str, html_file_path: str, room_i
     nodejs_url = os.getenv('NODEJS_URL', 'http://localhost:3000')
     
     try:
+        # 파일 내용을 텍스트로 읽기
+        with open(prd_file_path, 'r', encoding='utf-8') as f:
+            prd_content = f.read()
+        with open(html_file_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
         async with aiohttp.ClientSession() as session:
             # PRD 파일 업로드
-            with open(prd_file_path, 'rb') as f:
-                prd_data = aiohttp.FormData()
-                prd_data.add_field('prd', f, filename=os.path.basename(prd_file_path), content_type='text/markdown')
-                prd_data.add_field('uploadedBy', 'fastapi-agent')
-                
-                async with session.post(f'{nodejs_url}/api/rooms/{room_id}/prd', data=prd_data) as response:
-                    if response.status == 200:
-                        print(f"PRD 파일 업로드 성공: {prd_file_path}")
-                    else:
-                        print(f"PRD 파일 업로드 실패: {response.status}")
+            prd_data = aiohttp.FormData()
+            prd_data.add_field('prd', prd_content, filename=os.path.basename(prd_file_path), content_type='text/markdown')
+            prd_data.add_field('uploadedBy', 'fastapi-agent')
             
+            async with session.post(f'{nodejs_url}/api/rooms/{room_id}/prd', data=prd_data) as response:
+                if response.status == 200:
+                    print(f"PRD 파일 업로드 성공: {prd_file_path}")
+                else:
+                    print(f"PRD 파일 업로드 실패: {response.status}")
+        
             # HTML 파일 업로드
-            with open(html_file_path, 'rb') as f:
-                html_data = aiohttp.FormData()
-                html_data.add_field('html', f, filename=os.path.basename(html_file_path), content_type='text/html')
-                html_data.add_field('uploadedBy', 'fastapi-agent')
-                
-                async with session.post(f'{nodejs_url}/api/rooms/{room_id}/html', data=html_data) as response:
-                    if response.status == 200:
-                        print(f"HTML 파일 업로드 성공: {html_file_path}")
-                    else:
-                        print(f"HTML 파일 업로드 실패: {response.status}")
+            html_data = aiohttp.FormData()
+            html_data.add_field('html', html_content, filename=os.path.basename(html_file_path), content_type='text/html')
+            html_data.add_field('uploadedBy', 'fastapi-agent')
+            
+            async with session.post(f'{nodejs_url}/api/rooms/{room_id}/html', data=html_data) as response:
+                if response.status == 200:
+                    print(f"HTML 파일 업로드 성공: {html_file_path}")
+                else:
+                    print(f"HTML 파일 업로드 실패: {response.status}")
         
         # 로컬 파일 삭제 (TODO 항목)
         try:
