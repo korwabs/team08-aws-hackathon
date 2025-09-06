@@ -658,6 +658,111 @@ app.get("/api/rooms/:roomId/summary", async (req, res) => {
 
 /**
  * @swagger
+ * /api/rooms/{roomId}/generate-html-demo:
+ *   post:
+ *     summary: HTML 데모 생성
+ *     description: FastAPI를 통해 PRD와 HTML을 생성하고 S3에 업로드
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               prdUrl:
+ *                 type: string
+ *               htmlUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: HTML 데모 생성 성공
+ */
+app.post("/api/rooms/:roomId/generate-html-demo", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { userId, imageUrl, prdUrl, htmlUrl } = req.body;
+
+    // 1. 채팅 요약 가져오기
+    const summary = await chatSummaryService.summarizeChat(roomId);
+
+    // 2. FastAPI 호출하여 워크플로우 실행
+    const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:8000';
+    const workflowResponse = await fetch(`${fastApiUrl}/workflow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_summary: summary.summary,
+        prd_url: prdUrl,
+        image_url: imageUrl,
+        html_url: htmlUrl
+      })
+    });
+
+    if (!workflowResponse.ok) {
+      throw new Error(`FastAPI 호출 실패: ${workflowResponse.status}`);
+    }
+
+    const workflowResult = await workflowResponse.json();
+
+    // 3. 생성된 파일들을 읽어서 S3에 업로드
+    const fs = require('fs');
+    
+    const prdContent = fs.readFileSync(workflowResult.prd_file, 'utf8');
+    const htmlContent = fs.readFileSync(workflowResult.html_file, 'utf8');
+
+    const prdS3Url = await s3UploadService.uploadTextFile(
+      prdContent,
+      `rooms/${roomId}/prd/${Date.now()}.md`,
+      'text/markdown'
+    );
+
+    const htmlS3Url = await s3UploadService.uploadTextFile(
+      htmlContent,
+      `rooms/${roomId}/html/${Date.now()}.html`,
+      'text/html'
+    );
+
+    // 4. 데이터베이스에 기록
+    await db.execute(
+      "INSERT INTO html_files (room_id, filename, s3_key, s3_url, version, file_size, uploaded_by) VALUES (?, ?, ?, ?, 1, ?, ?)",
+      [roomId, 'generated-demo.html', `rooms/${roomId}/html/${Date.now()}.html`, htmlS3Url, htmlContent.length, userId || 'system']
+    );
+
+    // 5. 로컬 파일 삭제 (TODO 항목)
+    try {
+      fs.unlinkSync(workflowResult.prd_file);
+      fs.unlinkSync(workflowResult.html_file);
+    } catch (cleanupError) {
+      console.warn('파일 정리 실패:', cleanupError);
+    }
+
+    res.json({
+      success: true,
+      prdUrl: prdS3Url,
+      htmlUrl: htmlS3Url,
+      message: "HTML 데모가 성공적으로 생성되었습니다."
+    });
+
+  } catch (error: any) {
+    console.error("HTML 데모 생성 오류:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     WebSocketEvents:

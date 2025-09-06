@@ -27,6 +27,18 @@ export class S3UploadService {
     return `https://${this.bucketName}.s3.amazonaws.com/${fileName}`;
   }
 
+  async uploadTextFile(content: string, key: string, contentType: string): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: content,
+      ContentType: contentType,
+    });
+
+    await this.s3Client.send(command);
+    return `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+  }
+
   isImageFile(mimetype: string): boolean {
     return mimetype.startsWith('image/');
   }

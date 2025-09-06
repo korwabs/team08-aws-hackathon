@@ -127,10 +127,97 @@ function displaySummary(data) {
                 <div class="stat-label">이미지</div>
             </div>
         </div>
+        <div class="summary-actions">
+            <button class="btn btn-primary" onclick="generateHtmlDemo()" style="width: 100%; margin-bottom: 15px;">
+                🚀 HTML 데모 생성
+            </button>
+        </div>
         <div class="summary-text">
             ${htmlContent}
         </div>
     `;
+}
+
+// HTML 데모 생성 함수
+async function generateHtmlDemo() {
+    if (!currentRoomId) {
+        alert('채팅방을 선택해주세요.');
+        return;
+    }
+
+    // 로딩 상태 표시
+    const generateBtn = document.querySelector('.summary-actions button');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '⏳ 생성 중...';
+    generateBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/rooms/${currentRoomId}/generate-html-demo`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: localStorage.getItem('userId') || 'anonymous'
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // 성공 메시지 표시
+            generateBtn.innerHTML = '✅ 생성 완료!';
+            
+            // 결과 표시
+            const actionsDiv = document.querySelector('.summary-actions');
+            actionsDiv.innerHTML += `
+                <div class="demo-result" style="margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #2e7d32;">🎉 HTML 데모 생성 완료!</h4>
+                    <div style="margin: 10px 0;">
+                        <a href="${result.htmlUrl}" target="_blank" class="btn btn-success" style="margin-right: 10px;">
+                            📄 HTML 보기
+                        </a>
+                        <a href="${result.prdUrl}" target="_blank" class="btn btn-info">
+                            📋 PRD 보기
+                        </a>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin: 10px 0 0 0;">
+                        ${result.message}
+                    </p>
+                </div>
+            `;
+            
+            // 3초 후 버튼 원래 상태로 복원
+            setTimeout(() => {
+                generateBtn.innerHTML = originalText;
+                generateBtn.disabled = false;
+            }, 3000);
+            
+        } else {
+            throw new Error(result.error || 'HTML 데모 생성에 실패했습니다.');
+        }
+
+    } catch (error) {
+        console.error('HTML 데모 생성 오류:', error);
+        generateBtn.innerHTML = '❌ 생성 실패';
+        
+        // 에러 메시지 표시
+        const actionsDiv = document.querySelector('.summary-actions');
+        actionsDiv.innerHTML += `
+            <div class="demo-error" style="margin-top: 15px; padding: 15px; background: #ffebee; border-radius: 8px;">
+                <p style="color: #c62828; margin: 0;">❌ ${error.message}</p>
+                <button class="btn btn-primary" onclick="generateHtmlDemo()" style="margin-top: 10px;">
+                    다시 시도
+                </button>
+            </div>
+        `;
+        
+        // 3초 후 버튼 원래 상태로 복원
+        setTimeout(() => {
+            generateBtn.innerHTML = originalText;
+            generateBtn.disabled = false;
+        }, 3000);
+    }
 }
 
 // Socket 이벤트 리스너
