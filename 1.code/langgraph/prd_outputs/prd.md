@@ -3,383 +3,395 @@
 ## 프로젝트 개요
 
 ### 프로젝트명
-온라인 쇼핑몰 관리자 대시보드
+**FashionHub** - 20-30대 여성을 위한 트렌디 패션 온라인 쇼핑몰
 
-### 목적
-쇼핑몰 운영자가 상품, 주문, 고객, 매출을 효율적으로 관리할 수 있는 통합 관리 시스템 구축
-
-### 주요 기능
-- 상품 관리 (등록, 수정, 삭제, 재고 관리)
-- 주문 처리 (주문 조회, 상태 변경, 배송 관리)
-- 고객 관리 (고객 정보 조회, 문의 처리)
-- 매출 통계 (일/월/년 매출, 차트 시각화)
+### 비즈니스 목표
+- 20-30대 여성 고객을 대상으로 한 패션 이커머스 플랫폼 구축
+- 모바일 최적화를 통한 사용자 경험 극대화
+- 직관적인 상품 검색 및 구매 프로세스 제공
+- 효율적인 관리자 시스템을 통한 운영 최적화
 
 ### 타겟 사용자
-- 쇼핑몰 관리자
-- 운영팀 직원
-- 마케팅 담당자
+- **주요 타겟**: 20-30대 여성
+- **특성**: 트렌디한 패션 아이템 선호, 모바일 쇼핑 선호
+- **행동 패턴**: 소셜미디어 활용도 높음, 빠른 결제 프로세스 선호
+
+### 프로젝트 범위
+- 고객용 쇼핑몰 웹사이트
+- 관리자용 상품/주문 관리 시스템
+- 결제 시스템 연동
+- 반응형 웹 디자인
 
 ## 요구사항 분석
 
 ### 기능적 요구사항
 
-#### 1. 상품 관리
-- **상품 목록 조회**: 페이지네이션, 검색, 필터링
-- **상품 등록**: 이미지 업로드, 카테고리 분류, 가격 설정
-- **상품 수정**: 정보 변경, 재고 수량 조정
-- **상품 삭제**: 소프트 삭제, 삭제 확인 모달
+#### 1. 고객 기능 (높은 우선순위)
+- **상품 브라우징**
+  - 상품 목록 페이지 (카테고리별, 필터링)
+  - 상품 상세 페이지 (이미지 갤러리, 상세 정보, 리뷰)
+  - 검색 기능
+  
+- **쇼핑 기능**
+  - 장바구니 추가/수정/삭제
+  - 위시리스트 기능
+  - 결제 프로세스 (토스페이먼츠/아임포트 연동)
+  
+- **사용자 계정**
+  - 회원가입/로그인
+  - 주문 내역 조회
+  - 개인정보 관리
 
-#### 2. 주문 처리
-- **주문 목록**: 실시간 주문 현황, 상태별 필터
-- **주문 상세**: 고객 정보, 주문 상품, 배송 정보
-- **상태 관리**: 주문 확인 → 배송 준비 → 배송 중 → 배송 완료
-- **배송 추적**: 택배사 연동, 송장 번호 관리
+#### 2. 관리자 기능 (중간 우선순위)
+- **상품 관리**
+  - 상품 등록/수정/삭제
+  - 다중 이미지 업로드
+  - 재고 관리
+  
+- **주문 관리**
+  - 주문 현황 조회
+  - 배송 상태 관리
+  - 매출 통계
 
-#### 3. 고객 관리
-- **고객 목록**: 가입일, 주문 횟수, 총 구매액
-- **고객 상세**: 주문 이력, 문의 내역, 적립금
-- **문의 처리**: 1:1 문의, FAQ 관리
-- **등급 관리**: VIP, 일반 고객 분류
-
-#### 4. 매출 통계
-- **대시보드**: 오늘 매출, 주문 수, 방문자 수
-- **매출 차트**: 일별, 월별, 연별 매출 그래프
-- **상품 분석**: 베스트셀러, 매출 기여도
-- **고객 분석**: 신규/재구매 고객 비율
+#### 3. 카테고리 구조
+```
+패션 아이템
+├── 상의 (블라우스, 티셔츠, 셔츠)
+├── 하의 (팬츠, 스커트, 레깅스)
+├── 아우터 (코트, 자켓, 가디건)
+├── 원피스 (미니, 미디, 맥시)
+├── 액세서리 (가방, 주얼리, 벨트)
+└── 신발 (힐, 플랫, 스니커즈)
+```
 
 ### 비기능적 요구사항
-- **성능**: 페이지 로딩 시간 3초 이내
-- **보안**: 관리자 인증, 권한별 접근 제어
-- **호환성**: Chrome, Firefox, Safari 지원
-- **반응형**: 태블릿, 모바일 대응
+
+#### 성능 요구사항
+- 페이지 로딩 시간: 3초 이내
+- 이미지 최적화: WebP 포맷 지원
+- 동시 접속자: 1,000명 이상 지원
+
+#### 보안 요구사항
+- HTTPS 적용
+- 개인정보 암호화
+- 결제 정보 보안 (PCI DSS 준수)
+
+#### 사용성 요구사항
+- 모바일 우선 반응형 디자인
+- 직관적인 네비게이션
+- 접근성 표준 준수 (WCAG 2.1)
 
 ## 기술적 구현 사항
 
 ### 기술 스택
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **UI Framework**: Bootstrap 5
-- **차트 라이브러리**: Chart.js
-- **아이콘**: Font Awesome
-- **API**: RESTful API, LLM API 연동
+```javascript
+// Frontend Stack
+const frontendStack = {
+  framework: "React 18.x",
+  stateManagement: "Redux Toolkit",
+  styling: "Styled-components + Tailwind CSS",
+  routing: "React Router v6",
+  httpClient: "Axios",
+  imageOptimization: "React Image Gallery"
+};
 
-### 아키텍처 구조
+// Backend Stack
+const backendStack = {
+  runtime: "Node.js 18.x",
+  framework: "Express.js",
+  database: "MongoDB with Mongoose",
+  authentication: "JWT + bcrypt",
+  fileUpload: "Multer + AWS S3",
+  paymentGateway: ["TossPayments", "Iamport"]
+};
 ```
-├── index.html (메인 대시보드)
-├── assets/
-│   ├── css/
-│   │   ├── bootstrap.min.css
-│   │   └── dashboard.css
-│   ├── js/
-│   │   ├── bootstrap.bundle.min.js
-│   │   ├── chart.min.js
-│   │   ├── dashboard.js
-│   │   └── api-client.js
-│   └── images/
+
+### 아키텍처 설계
+
+#### 프론트엔드 구조
+```
+src/
+├── components/
+│   ├── common/          # 공통 컴포넌트
+│   ├── product/         # 상품 관련 컴포넌트
+│   ├── cart/           # 장바구니 컴포넌트
+│   └── admin/          # 관리자 컴포넌트
 ├── pages/
-│   ├── products.html
-│   ├── orders.html
-│   ├── customers.html
-│   └── analytics.html
-└── components/
-    ├── sidebar.html
-    ├── header.html
-    └── modals.html
+├── hooks/              # 커스텀 훅
+├── store/              # Redux 스토어
+├── services/           # API 서비스
+└── utils/              # 유틸리티 함수
 ```
 
-### LLM API 연동 코드
-
+#### 백엔드 API 설계
 ```javascript
-// api-client.js
-class APIClient {
-    constructor() {
-        this.baseURL = 'https://api.openai.com/v1';
-        this.apiKey = 'YOUR_API_KEY';
-    }
-
-    async generateProductDescription(productName, category) {
-        try {
-            const response = await fetch(`${this.baseURL}/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [{
-                        role: 'user',
-                        content: `${category} 카테고리의 "${productName}" 상품에 대한 매력적인 상품 설명을 200자 이내로 작성해주세요.`
-                    }],
-                    max_tokens: 150,
-                    temperature: 0.7
-                })
-            });
-
-            const data = await response.json();
-            return data.choices[0].message.content;
-        } catch (error) {
-            console.error('API 호출 오류:', error);
-            return '상품 설명을 생성할 수 없습니다.';
-        }
-    }
-
-    async generateSalesReport(salesData) {
-        try {
-            const response = await fetch(`${this.baseURL}/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [{
-                        role: 'user',
-                        content: `다음 매출 데이터를 분석하여 인사이트와 개선 방안을 제시해주세요: ${JSON.stringify(salesData)}`
-                    }],
-                    max_tokens: 300,
-                    temperature: 0.5
-                })
-            });
-
-            const data = await response.json();
-            return data.choices[0].message.content;
-        } catch (error) {
-            console.error('매출 분석 오류:', error);
-            return '매출 분석을 생성할 수 없습니다.';
-        }
-    }
-
-    async generateCustomerInsights(customerData) {
-        try {
-            const response = await fetch(`${this.baseURL}/chat/completions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [{
-                        role: 'user',
-                        content: `고객 데이터를 바탕으로 마케팅 전략을 제안해주세요: ${JSON.stringify(customerData)}`
-                    }],
-                    max_tokens: 250,
-                    temperature: 0.6
-                })
-            });
-
-            const data = await response.json();
-            return data.choices[0].message.content;
-        } catch (error) {
-            console.error('고객 분석 오류:', error);
-            return '고객 분석을 생성할 수 없습니다.';
-        }
-    }
-}
-
-// 사용 예시
-const apiClient = new APIClient();
-
-// 상품 설명 자동 생성
-document.getElementById('generateDescription').addEventListener('click', async () => {
-    const productName = document.getElementById('productName').value;
-    const category = document.getElementById('category').value;
-    
-    const description = await apiClient.generateProductDescription(productName, category);
-    document.getElementById('productDescription').value = description;
-});
+// API 엔드포인트 구조
+const apiEndpoints = {
+  // 상품 관련
+  products: {
+    getAll: "GET /api/products",
+    getById: "GET /api/products/:id",
+    create: "POST /api/products",
+    update: "PUT /api/products/:id",
+    delete: "DELETE /api/products/:id",
+    getByCategory: "GET /api/products/category/:category"
+  },
+  
+  // 주문 관련
+  orders: {
+    create: "POST /api/orders",
+    getByUser: "GET /api/orders/user/:userId",
+    updateStatus: "PUT /api/orders/:id/status"
+  },
+  
+  // 결제 관련
+  payments: {
+    process: "POST /api/payments/process",
+    verify: "POST /api/payments/verify",
+    cancel: "POST /api/payments/cancel"
+  }
+};
 ```
 
-### 동적 데이터 생성 함수
+### 데이터베이스 스키마
 
+#### 상품 스키마
 ```javascript
-// dashboard.js
-class DashboardManager {
-    constructor() {
-        this.apiClient = new APIClient();
-        this.init();
-    }
+const productSchema = {
+  _id: "ObjectId",
+  name: "String",
+  description: "String",
+  price: "Number",
+  category: "String",
+  sizes: ["String"], // ["S", "M", "L", "XL"]
+  colors: ["String"],
+  images: ["String"], // 이미지 URL 배열
+  stock: {
+    S: "Number",
+    M: "Number", 
+    L: "Number",
+    XL: "Number"
+  },
+  isActive: "Boolean",
+  createdAt: "Date",
+  updatedAt: "Date"
+};
+```
 
-    init() {
-        this.loadDashboardData();
-        this.setupEventListeners();
-    }
-
-    async loadDashboardData() {
-        // 모의 데이터 생성
-        const mockData = this.generateMockData();
-        
-        // 대시보드 위젯 업데이트
-        this.updateDashboardWidgets(mockData);
-        
-        // 차트 렌더링
-        this.renderCharts(mockData);
-        
-        // AI 인사이트 생성
-        await this.generateAIInsights(mockData);
-    }
-
-    generateMockData() {
-        const today = new Date();
-        const salesData = [];
-        
-        // 최근 30일 매출 데이터 생성
-        for (let i = 29; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(date.getDate() - i);
-            
-            salesData.push({
-                date: date.toISOString().split('T')[0],
-                sales: Math.floor(Math.random() * 1000000) + 500000,
-                orders: Math.floor(Math.random() * 100) + 50,
-                visitors: Math.floor(Math.random() * 1000) + 500
-            });
-        }
-
-        return {
-            todaySales: salesData[salesData.length - 1].sales,
-            todayOrders: salesData[salesData.length - 1].orders,
-            todayVisitors: salesData[salesData.length - 1].visitors,
-            salesData: salesData,
-            topProducts: [
-                { name: '스마트폰 케이스', sales: 1500000, quantity: 300 },
-                { name: '무선 이어폰', sales: 2800000, quantity: 140 },
-                { name: '노트북 스탠드', sales: 950000, quantity: 190 }
-            ],
-            customerStats: {
-                total: 15420,
-                new: 234,
-                returning: 1876
-            }
-        };
-    }
-
-    updateDashboardWidgets(data) {
-        document.getElementById('todaySales').textContent = 
-            new Intl.NumberFormat('ko-KR').format(data.todaySales) + '원';
-        document.getElementById('todayOrders').textContent = data.todayOrders + '건';
-        document.getElementById('todayVisitors').textContent = data.todayVisitors + '명';
-    }
-
-    renderCharts(data) {
-        // 매출 차트
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        new Chart(salesCtx, {
-            type: 'line',
-            data: {
-                labels: data.salesData.map(d => d.date),
-                datasets: [{
-                    label: '일별 매출',
-                    data: data.salesData.map(d => d.sales),
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: '최근 30일 매출 추이'
-                    }
-                }
-            }
-        });
-
-        // 상품별 매출 차트
-        const productCtx = document.getElementById('productChart').getContext('2d');
-        new Chart(productCtx, {
-            type: 'doughnut',
-            data: {
-                labels: data.topProducts.map(p => p.name),
-                datasets: [{
-                    data: data.topProducts.map(p => p.sales),
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.8)',
-                        'rgba(54, 162, 235, 0.8)',
-                        'rgba(255, 205, 86, 0.8)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: '상품별 매출 비중'
-                    }
-                }
-            }
-        });
-    }
-
-    async generateAIInsights(data) {
-        const insightsContainer = document.getElementById('aiInsights');
-        insightsContainer.innerHTML = '<div class="spinner-border" role="status"></div>';
-
-        try {
-            const salesInsight = await this.apiClient.generateSalesReport(data.salesData);
-            const customerInsight = await this.apiClient.generateCustomerInsights(data.customerStats);
-
-            insightsContainer.innerHTML = `
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <i class="fas fa-chart-line"></i> 매출 분석
-                    </div>
-                    <div class="card-body">
-                        <p>${salesInsight}</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-users"></i> 고객 분석
-                    </div>
-                    <div class="card-body">
-                        <p>${customerInsight}</p>
-                    </div>
-                </div>
-            `;
-        } catch (error) {
-            insightsContainer.innerHTML = `
-                <div class="alert alert-warning">
-                    AI 인사이트를 불러올 수 없습니다. 나중에 다시 시도해주세요.
-                </div>
-            `;
-        }
-    }
-
-    setupEventListeners() {
-        // 새로고침 버튼
-        document.getElementById('refreshData')?.addEventListener('click', () => {
-            this.loadDashboardData();
-        });
-
-        // 날짜 범위 변경
-        document.getElementById('dateRange')?.addEventListener('change', (e) => {
-            this.updateDateRange(e.target.value);
-        });
-    }
-}
-
-// 초기화
-document.addEventListener('DOMContentLoaded', () => {
-    new DashboardManager();
-});
+#### 주문 스키마
+```javascript
+const orderSchema = {
+  _id: "ObjectId",
+  userId: "ObjectId",
+  items: [{
+    productId: "ObjectId",
+    quantity: "Number",
+    size: "String",
+    price: "Number"
+  }],
+  totalAmount: "Number",
+  shippingAddress: "Object",
+  paymentInfo: "Object",
+  status: "String", // "pending", "paid", "shipped", "delivered"
+  createdAt: "Date"
+};
 ```
 
 ## HTML 에이전트 실행 가이드
 
-### 1. 프로젝트 구조 생성
+### 개발 환경 설정
+
+#### 1. 프로젝트 초기화
 ```bash
-mkdir shopping-mall-dashboard
-cd shopping-mall-dashboard
-mkdir -p assets/{css,js,images} pages components
+# React 앱 생성
+npx create-react-app fashion-hub
+cd fashion-hub
+
+# 필요한 패키지 설치
+npm install redux @reduxjs/toolkit react-redux
+npm install react-router-dom axios
+npm install styled-components tailwindcss
+npm install react-image-gallery swiper
 ```
 
-### 2. 필수 라이브러리 설치
-```html
-<!-- CDN 방식으로 포함 -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/
+#### 2. 백엔드 설정
+```bash
+# 백엔드 디렉토리 생성
+mkdir fashion-hub-backend
+cd fashion-hub-backend
+
+# 패키지 초기화 및 설치
+npm init -y
+npm install express mongoose cors dotenv
+npm install jsonwebtoken bcryptjs multer
+npm install @tosspayments/payment-sdk iamport
+```
+
+### 핵심 컴포넌트 구현
+
+#### 상품 목록 컴포넌트
+```javascript
+// components/product/ProductList.jsx
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProducts } from '../../store/productSlice';
+
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const { products, loading, filters } = useSelector(state => state.products);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSize, setSelectedSize] = useState('all');
+
+  useEffect(() => {
+    dispatch(fetchProducts({ category: selectedCategory, size: selectedSize }));
+  }, [dispatch, selectedCategory, selectedSize]);
+
+  const categories = ['all', '상의', '하의', '아우터', '원피스', '액세서리', '신발'];
+  const sizes = ['all', 'S', 'M', 'L', 'XL'];
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* 필터 섹션 */}
+      <div className="mb-8 bg-white p-6 rounded-lg shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 카테고리 필터 */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">카테고리</h3>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category === 'all' ? '전체' : category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 사이즈 필터 */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">사이즈</h3>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map(size => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedSize === size
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {size === 'all' ? '전체' : size}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 상품 그리드 */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {products.map(product => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 상품 카드 컴포넌트
+const ProductCard = ({ product }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div 
+        className="relative aspect-square overflow-hidden cursor-pointer"
+        onMouseEnter={() => setCurrentImageIndex(1)}
+        onMouseLeave={() => setCurrentImageIndex(0)}
+      >
+        <img
+          src={product.images[currentImageIndex] || product.images[0]}
+          alt={product.name}
+          className="w-full h-full object-cover transition-transform hover:scale-105"
+        />
+        {product.images.length > 1 && (
+          <div className="absolute bottom-2 left-2 flex space-x-1">
+            {product.images.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4">
+        <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+          {product.name}
+        </h3>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-black">
+            {product.price.toLocaleString()}원
+          </span>
+          <div className="flex space-x-1">
+            {product.sizes.map(size => (
+              <span key={size} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                {size}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductList;
+```
+
+#### 장바구니 컴포넌트
+```javascript
+// components/cart/Cart.jsx
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateQuantity, removeFromCart } from '../../store/cartSlice';
+
+const Cart = () => {
+  const dispatch = useDispatch();
+  const { items, totalAmount } = useSelector(state => state.cart);
+
+  const handleQuantityChange = (itemId, newQuantity) => {
+    if (newQuantity === 0) {
+      dispatch(removeFromCart(itemId));
+    } else {
+      dispatch(updateQuantity({ itemId, quantity: newQuantity }));
+    }
+  };
+
+  const handleCheckout = () => {
+    // 결제 프로세스 시작
+    initiatePayment();
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-8">장바구니</h1>
+      
+      {items.

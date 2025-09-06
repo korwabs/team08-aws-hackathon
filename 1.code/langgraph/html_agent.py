@@ -1,14 +1,33 @@
 import os
 import re
 import json
+import boto3
 from datetime import datetime
 from typing import Optional, Dict, Any
+from botocore.config import Config
 
 class HTMLAgent:
-    def __init__(self, llm_api_url: str = None):
-        self.llm_api_url = llm_api_url or os.getenv('LLM_API_URL', 'https://d2co7xon1r3p3l.cloudfront.net/llm') or os.getenv('LLM_API_URL', 'http://langgraph-prd-alb-88774834.us-east-1.elb.amazonaws.com/llm')
+    def __init__(self, llm_api_url: str = "http://localhost:8000/llm"):
+        self.llm_api_url = llm_api_url
         self.output_dir = "html_outputs"
+        self._setup_bedrock_client()
         os.makedirs(self.output_dir, exist_ok=True)
+    
+    def _setup_bedrock_client(self):
+        """Bedrock 클라이언트 설정"""
+        config = Config(
+            read_timeout=int(os.getenv("MODEL_TIMEOUT", "180")),
+            connect_timeout=30,
+            retries={'max_attempts': 3}
+        )
+        
+        self.bedrock_client = boto3.client(
+            'bedrock-runtime',
+            region_name=os.getenv("AWS_REGION", "us-east-1"),
+            config=config
+        )
+        
+        self.model_id = os.getenv("BEDROCK_MODEL_ID", "us.anthropic.claude-opus-4-1-20250805-v1:0")
     
     def generate_html(self, prd_file_path: str) -> str:
         """PRD 파일을 읽어서 HTML을 생성합니다."""
@@ -16,7 +35,6 @@ class HTMLAgent:
         html_structure = self._extract_html_requirements(prd_content)
         html_content = self._generate_html_content(html_structure)
         
-        # index.html로 저장
         output_file = f"{self.output_dir}/index.html"
         
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -31,178 +49,234 @@ class HTMLAgent:
     
     def _extract_html_requirements(self, prd_content: str) -> Dict[str, Any]:
         """PRD에서 HTML 요구사항을 추출합니다."""
-        title_match = re.search(r'# (.+)', prd_content)
-        title = title_match.group(1) if title_match else "웹 애플리케이션"
+        title = "웹 애플리케이션"
+        project_name_match = re.search(r'### 1\.1 프로젝트 명\s*\n\*\*(.+?)\*\*', prd_content)
+        if project_name_match:
+            title = project_name_match.group(1).strip()
+        else:
+            patterns = [
+                r'### 프로젝트명\s*\n(.+)',
+                r'### 프로젝트 명\s*\n(.+)',
+                r'# (.+)'
+            ]
+            for pattern in patterns:
+                match = re.search(pattern, prd_content)
+                if match:
+                    title = match.group(1).strip()
+                    break
         
         features = re.findall(r'- (.+)', prd_content)
         
         return {
             "title": title,
-            "features": features[:5],
-            "has_search": "검색" in prd_content or "조회" in prd_content,
-            "has_data_generation": "생성" in prd_content or "동적" in prd_content,
+            "features": features,
+            "prd_content": prd_content
         }
     
     def _generate_html_content(self, structure: Dict[str, Any]) -> str:
-        """HTML 콘텐츠를 생성합니다."""
-        return f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{structure['title']}</title>
-    <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
-        .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-        .search-section {{ margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }}
-        .data-display {{ margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; min-height: 200px; }}
-        .feature-list {{ list-style-type: none; padding: 0; }}
-        .feature-item {{ padding: 15px; margin: 5px 0; background: #e9e9e9; border-radius: 5px; cursor: pointer; transition: background 0.3s; }}
-        .feature-item:hover {{ background: #d4edda; }}
-        button {{ padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }}
-        button:hover {{ background: #0056b3; }}
-        .loading {{ display: none; color: #666; font-style: italic; }}
-        input[type="text"] {{ width: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{structure['title']}</h1>
-        
-        {self._generate_search_section() if structure['has_search'] else ''}
-        
-        <div class="features-section">
-            <h2>주요 기능</h2>
-            <ul class="feature-list">
-                {self._generate_feature_items(structure['features'])}
-            </ul>
-        </div>
-        
-        <div class="data-display" id="dataDisplay">
-            <h3>동적 데이터</h3>
-            <div id="dynamicContent">페이지를 로드하는 중입니다...</div>
-        </div>
-    </div>
+        """요약 내용을 분석하여 맞춤형 HTML을 생성합니다."""
+        '<!DOCTYPE html>'
+        design_prompt = f"""
+        다음 PRD 내용을 깊이 분석하여 사용자 요구사항에 완벽히 맞는 웹 애플리케이션을 생성해주세요.
 
-    <script>
-        {self._generate_javascript()}
-    </script>
-</body>
-</html>"""
-    
-    def _generate_search_section(self) -> str:
-        """검색 섹션을 생성합니다."""
-        return """
-        <div class="search-section">
-            <h2>데이터 검색</h2>
-            <input type="text" id="searchInput" placeholder="검색어를 입력하세요...">
-            <button onclick="searchData()">검색</button>
-            <div class="loading" id="loading">데이터를 생성중입니다...</div>
-        </div>"""
-    
-    def _generate_feature_items(self, features: list) -> str:
-        """기능 목록 아이템을 생성합니다."""
-        items = []
-        for i, feature in enumerate(features):
-            items.append(f'<li class="feature-item" onclick="loadFeatureData({i}, \'{feature}\')">{feature}</li>')
-        return '\n'.join(items)
-    
-    def _generate_javascript(self) -> str:
-        """동적 데이터 생성을 위한 JavaScript를 생성합니다."""
-        return f"""
+        프로젝트: {structure['title']}
+        주요 기능: {', '.join(structure['features'])}
+        
+        PRD 전체 내용:
+        {structure['prd_content']}
+        
+        **요구사항 분석 및 맞춤 설계:**
+        1. **도메인 분석**: PRD 내용에서 비즈니스 도메인을 파악하고 해당 업종에 특화된 UI/UX 설계
+           - 전자상거래: 상품 카탈로그, 장바구니, 주문 관리 중심
+           - 의료/헬스케어: 환자 정보, 진료 기록, 안전한 데이터 표시
+           - 교육: 학습자 중심, 진도 추적, 직관적 네비게이션
+           - 금융: 보안 강조, 데이터 시각화, 거래 내역
+           - 관리 시스템: 대시보드, 통계, 사용자 권한 관리
+           - 기타: 프로젝트 특성에 맞는 독창적 접근
+
+        2. **사용자 요구사항 반영**: 
+           - 주요 기능들을 우선순위에 따라 배치
+           - 사용자 워크플로우에 맞는 화면 구성
+           - 필요한 데이터 입력/출력 인터페이스 설계
+
+        3. **적합한 디자인 선택**:
+           - 업종별 색상 팔레트 (신뢰감, 전문성, 친근함 등)
+           - 적절한 레이아웃 (그리드, 카드, 테이블, 대시보드)
+           - 타겟 사용자에 맞는 UI 복잡도 조절
+
+        4. **현대적 웹 표준**:
+           - 반응형 디자인 (모바일, 태블릿, 데스크톱)
+           - 접근성 고려 (색상 대비, 키보드 네비게이션)
+           - 성능 최적화 (CSS Grid/Flexbox)
+           - 부드러운 인터랙션 (애니메이션, 트랜지션)
+
+        **필수 JavaScript 기능 (정확히 구현):**
+        ```javascript
         async function callLLM(prompt) {{
             try {{
-                console.log('LLM API 호출 시작:', prompt);
-                
                 const response = await fetch('{self.llm_api_url}', {{
                     method: 'POST',
-                    headers: {{
+                    headers: {{ 
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     }},
-                    body: JSON.stringify({{
-                        prompt: prompt
-                    }})
+                    body: JSON.stringify({{ prompt: prompt }})
                 }});
                 
-                console.log('Response status:', response.status);
-                
                 if (!response.ok) {{
-                    throw new Error(`HTTP error! status: ${{response.status}}`);
+                    throw new Error(`HTTP ${{response.status}}: ${{response.statusText}}`);
                 }}
                 
                 const data = await response.json();
-                console.log('Response data:', data);
-                return data.response || '데이터를 생성할 수 없습니다.';
-                
+                return data.response || data.content || '데이터를 생성할 수 없습니다.';
             }} catch (error) {{
                 console.error('LLM API 호출 오류:', error);
-                
-                // 네트워크 오류시 로컬 더미 데이터 반환
-                if (error.message.includes('Failed to fetch')) {{
-                    return `
-                    <div style="border: 2px solid #ff9800; padding: 15px; border-radius: 5px; background: #fff3e0;">
-                        <h3>⚠️ 서버 연결 오류</h3>
-                        <p>LLM API 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.</p>
-                        <p><strong>서버 시작:</strong> <code>python server.py start</code></p>
-                        <hr>
-                        <h4>테스트 데이터:</h4>
-                        <table border="1" style="width:100%; border-collapse: collapse;">
-                            <tr style="background-color: #f2f2f2;">
-                                <th>항목</th><th>값</th><th>상태</th>
-                            </tr>
-                            <tr><td>상품 수</td><td>1,234개</td><td>정상</td></tr>
-                            <tr><td>주문 수</td><td>567건</td><td>처리중</td></tr>
-                            <tr><td>고객 수</td><td>890명</td><td>활성</td></tr>
-                        </table>
-                    </div>`;
-                }}
-                
-                return `<div style="color: red;">오류가 발생했습니다: ${{error.message}}</div>`;
+                return `<div style="color: red; padding: 10px; border: 1px solid red; border-radius: 5px;">오류: ${{error.message}}</div>`;
             }}
         }}
 
         async function searchData() {{
             const searchInput = document.getElementById('searchInput');
-            const loading = document.getElementById('loading');
-            const dataDisplay = document.getElementById('dynamicContent');
+            if (!searchInput) return;
             
-            const query = searchInput.value.trim();
+            const query = searchInput.value?.trim();
             if (!query) {{
-                alert('검색어를 입력해주세요.');
+                alert('검색어를 입력하세요.');
                 return;
             }}
             
-            loading.style.display = 'block';
-            dataDisplay.innerHTML = '<div style="color: #666;">데이터를 생성중입니다...</div>';
+            const contentArea = document.getElementById('dynamicContent');
+            if (!contentArea) return;
             
-            const prompt = `다음 검색어에 대한 상세한 정보를 HTML 형태로 생성해주세요: "${{query}}". 
-            실제 데이터처럼 보이는 구체적인 내용을 포함하고, 표나 목록 형태로 구조화해주세요.`;
+            contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">🔍 검색 중...</div>';
             
-            const result = await callLLM(prompt);
+            const searchPrompt = `다음 검색어에 대한 상세하고 유용한 정보를 HTML 형태로 생성해주세요:
             
-            loading.style.display = 'none';
-            dataDisplay.innerHTML = result;
+검색어: "${{query}}"
+
+요구사항:
+- 검색어와 관련된 구체적이고 실용적인 정보 제공
+- HTML 테이블, 리스트, 카드 형태로 구조화된 데이터
+- 실제 데이터처럼 보이는 구체적인 수치와 내용
+- 인라인 CSS 스타일링으로 시각적으로 매력적인 디자인
+- 검색 결과가 풍부하고 유용하도록 구성
+
+HTML만 반환하고 추가 설명은 제외해주세요.`;
+            
+            const result = await callLLM(searchPrompt);
+            contentArea.innerHTML = result;
         }}
 
-        async function loadFeatureData(featureIndex, featureName) {{
-            const dataDisplay = document.getElementById('dynamicContent');
+        async function loadFeatureData(index, name) {{
+            const contentArea = document.getElementById('dynamicContent');
+            if (!contentArea) return;
             
-            dataDisplay.innerHTML = '<div style="color: #666;">데이터를 생성중입니다...</div>';
+            contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">⚙️ 데이터 로딩 중...</div>';
             
-            const prompt = `"${{featureName}}" 기능에 대한 상세 데이터를 HTML 표 형태로 생성해주세요. 
-            실제 시스템에서 사용될 것 같은 구체적인 데이터를 포함해주세요. 
-            예시 데이터, 통계, 차트 등을 포함하여 풍부한 내용으로 만들어주세요.`;
+            const featurePrompt = `"${{name}}" 기능에 대한 전문적인 관리 화면을 HTML로 생성해주세요:
+
+요구사항:
+- ${{name}} 기능의 핵심 관리 요소들을 포함
+- 실제 관리자 시스템에서 볼 수 있는 데이터 테이블
+- 상태 표시기, 진행률, 통계 정보
+- 액션 버튼들 (수정, 삭제, 추가 등)
+- 필터링 및 정렬 옵션
+- 현대적인 인라인 CSS 스타일링
+- 실제 데이터처럼 보이는 구체적인 내용 (이름, 날짜, 수치 등)
+
+HTML만 반환하고 추가 설명은 제외해주세요.`;
             
-            const result = await callLLM(prompt);
-            dataDisplay.innerHTML = result;
+            const result = await callLLM(featurePrompt);
+            contentArea.innerHTML = result;
         }}
 
-        // 페이지 로드시 초기 데이터 생성
         window.onload = async function() {{
-            console.log('페이지 로드 완료, 초기 데이터 생성 시작');
-            const prompt = "웹 애플리케이션의 대시보드에 표시될 초기 데이터를 HTML 형태로 생성해주세요. 차트, 통계, 최근 활동 등을 포함해주세요.";
-            const result = await callLLM(prompt);
-            document.getElementById('dynamicContent').innerHTML = result;
+            const contentArea = document.getElementById('dynamicContent');
+            if (!contentArea) return;
+            
+            contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">🚀 대시보드 로딩 중...</div>';
+            
+            const dashboardPrompt = `프로젝트 "{structure['title']}"에 적합한 관리자 대시보드 메인 화면을 HTML로 생성해주세요:
+
+주요 기능들: {', '.join(structure['features'])}
+
+요구사항:
+- 프로젝트 특성에 맞는 KPI 카드들 (매출, 사용자 수, 성장률, 활동 지표 등)
+- 실시간 통계 차트 (CSS로 구현된 간단한 바 차트나 도넛 차트)
+- 최근 활동 피드 또는 알림 목록
+- 빠른 액션 버튼들
+- 중요 메트릭 요약
+- 현대적이고 전문적인 인라인 CSS 스타일링
+- 실제 대시보드처럼 보이는 구체적인 데이터와 수치
+
+HTML만 반환하고 추가 설명은 제외해주세요.`;
+            
+            const result = await callLLM(dashboardPrompt);
+            contentArea.innerHTML = result;
         }}
+        ```
+
+        **출력**: 완전한 HTML 문서 (<!DOCTYPE html>부터 </html>까지)
+
+        PRD 내용을 바탕으로 실제 사용자가 원하는 기능과 디자인을 정확히 파악하여, 해당 도메인의 전문가가 설계한 수준의 웹 애플리케이션을 생성해주세요.
+
+        코드 블록 마크다운(```html) 사용 금지
+        </html>
         """
+        
+        try:
+            response = self.bedrock_client.invoke_model(
+                modelId=self.model_id,
+                body=json.dumps({
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": int(os.getenv("MAX_TOKENS", "8000")),
+                    "temperature": float(os.getenv("MODEL_TEMPERATURE", "0")),
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": design_prompt
+                        }
+                    ]
+                })
+            )
+            
+            response_body = json.loads(response['body'].read())
+            html_content = response_body['content'][0]['text']
+            
+            # HTML 문서 형식 확인
+            if not html_content.strip().startswith('<!DOCTYPE html>'):
+                html_content = f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{structure['title']}</title>
+</head>
+<body>
+{html_content}
+</body>
+</html>"""
+            
+            return html_content
+            
+        except Exception as e:
+            print(f"HTML 생성 오류: {e}")
+            return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{structure['title']} - 오류</title>
+</head>
+<body>
+    <h1>HTML 생성 오류</h1>
+    <p>오류: {e}</p>
+    <p>프로젝트: {structure['title']}</p>
+    <script>
+        async function callLLM(prompt) {{ return '오류 발생'; }}
+        async function searchData() {{ }}
+        async function loadFeatureData(index, name) {{ }}
+        window.onload = function() {{ }}
+    </script>
+</body>
+</html>"""
