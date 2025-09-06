@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Maximize, RefreshCw, Zap, ExternalLink, FileText, ChevronDown, Copy } from 'lucide-react'
+import { Maximize, RefreshCw, Zap, ExternalLink, ChevronDown, Copy } from 'lucide-react'
 import { useHtmlDemo } from '../../hooks/useHtmlDemo'
 import { useHtmlFiles } from '../../hooks/useApi'
 import { Button } from '../../components/ui'
@@ -82,7 +82,7 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
 
   const handleRefresh = () => {
     if (iframeRef.current && currentDemoUrl) {
-      iframeRef.current.src = iframeRef.current.src
+      iframeRef.current.src = currentDemoUrl
     }
   }
 
@@ -261,15 +261,6 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
                   <span className="font-medium text-sm">{result.message}</span>
                 </div>
                 <div className="flex gap-2">
-                  <a 
-                    href={result.prdFile} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                  >
-                    <FileText className="w-3 h-3" />
-                    PRD
-                  </a>
                   <a 
                     href={result.htmlFile} 
                     target="_blank" 

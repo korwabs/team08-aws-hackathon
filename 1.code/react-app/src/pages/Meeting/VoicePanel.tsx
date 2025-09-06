@@ -128,7 +128,7 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
       
       socket.startFileRecording()
       
-    } catch (error) {
+    } catch {
       setStatus('마이크 권한이 필요합니다.')
     }
   }

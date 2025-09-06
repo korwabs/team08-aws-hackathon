@@ -22,7 +22,7 @@ export default function Login({ onLogin }: LoginProps) {
         onLogin(mockToken)
         setLoading(false)
       }, 1000)
-    } catch (error) {
+    } catch {
       alert('로그인 중 오류가 발생했습니다.')
       setLoading(false)
     }
