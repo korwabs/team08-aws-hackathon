@@ -65,7 +65,7 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
     })
 
     // STT 완료 결과
-    const unsubscribeTranscribeComplete = socket.onFileTranscribeComplete((result) => {
+    const unsubscribeTranscribeComplete = socket.onFileTranscribeComplete(() => {
       setStatus('STT 완료')
       // 메시지 쿼리 무효화하여 새 데이터 가져오기
       queryClient.invalidateQueries({ queryKey: queryKeys.messages(meetingId) })
@@ -241,8 +241,10 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
                         onClick={() => setSelectedImage(message.message)}
                         onError={(e) => {
                           // 이미지 로드 실패 시 텍스트로 표시
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling!.style.display = 'block'
+                          const target = e.currentTarget as HTMLImageElement
+                          target.style.display = 'none'
+                          const nextElement = target.nextElementSibling as HTMLElement
+                          if (nextElement) nextElement.style.display = 'block'
                         }}
                       />
                       <p className="text-gray-800 text-xs hidden">{message.message}</p>
