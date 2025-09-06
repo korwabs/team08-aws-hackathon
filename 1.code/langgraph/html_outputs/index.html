@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRENDY FASHION - 관리자 대시보드</title>
+    <title>**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰</title>
+</head>
+<body>
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRENDY FASHION - 20-30대 여성을 위한 패션 온라인 쇼핑몰</title>
     <style>
         * {
             margin: 0;
@@ -13,317 +22,351 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+            background-color: #F8FAFC;
+            color: #1F2937;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 20px;
         }
 
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        header {
+            background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .header h1 {
-            color: #d4af37;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .search-container {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .search-input {
+            gap: 10px;
             flex: 1;
-            min-width: 300px;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 50px;
-            font-size: 16px;
+            max-width: 400px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
             outline: none;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
         }
 
-        .search-input:focus {
-            border-color: #d4af37;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .search-button {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #d4af37, #f4d03f);
+        #searchButton {
+            background-color: #6366F1;
             color: white;
             border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 25px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+            font-weight: 500;
+            transition: background-color 0.3s;
         }
 
-        .search-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+        #searchButton:hover {
+            background-color: #4F46E5;
         }
 
-        .search-button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
+        nav {
+            background-color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .main-content {
+        .nav-menu {
             display: grid;
-            grid-template-columns: 300px 1fr;
-            gap: 30px;
-            align-items: start;
-        }
-
-        .sidebar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            position: sticky;
-            top: 20px;
-        }
-
-        .sidebar h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .feature-list {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
             list-style: none;
         }
 
-        .feature-item {
-            margin-bottom: 12px;
+        .nav-menu li {
+            text-align: center;
         }
 
-        .feature-button {
-            width: 100%;
-            padding: 15px 20px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+        .nav-menu a {
+            color: #1F2937;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: block;
+        }
+
+        .nav-menu a:hover {
+            background-color: #6366F1;
+            color: white;
+        }
+
+        main {
+            padding: 40px 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .feature-card h3 {
+            color: #6366F1;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .feature-card p {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        #dynamicContent {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        .btn-primary {
+            background-color: #6366F1;
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 12px 24px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-weight: 500;
+            transition: background-color 0.3s;
         }
 
-        .feature-button:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        .btn-primary:hover {
+            background-color: #4F46E5;
         }
 
-        .feature-button::before {
-            content: "📊";
-            font-size: 16px;
+        .btn-secondary {
+            background-color: #EC4899;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
         }
 
-        .feature-button:nth-child(2n)::before { content: "🛍️"; }
-        .feature-button:nth-child(3n)::before { content: "📦"; }
-        .feature-button:nth-child(4n)::before { content: "💳"; }
-        .feature-button:nth-child(5n)::before { content: "👥"; }
+        .btn-secondary:hover {
+            background-color: #DB2777;
+        }
 
-        .content-area {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            min-height: 600px;
+        footer {
+            background-color: #1F2937;
+            color: white;
+            padding: 40px 0;
+            margin-top: 40px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 15px;
+            color: #EC4899;
+        }
+
+        .footer-section p, .footer-section a {
+            color: #9CA3AF;
+            text-decoration: none;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .footer-section a:hover {
+            color: #6366F1;
         }
 
         @media (max-width: 1024px) {
-            .main-content {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .search-container {
+                max-width: 100%;
+            }
+            
+            .nav-menu {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            .feature-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                position: static;
-                order: 2;
-            }
-            
-            .feature-list {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 15px;
             }
         }
 
         @media (max-width: 768px) {
-            .container {
+            .logo {
+                font-size: 24px;
+            }
+            
+            #searchInput, #searchButton {
+                padding: 10px 16px;
+            }
+            
+            .nav-menu {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .feature-card {
                 padding: 15px;
             }
             
-            .header {
-                padding: 20px;
-                text-align: center;
+            #dynamicContent {
+                padding: 15px;
             }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .search-container {
-                flex-direction: column;
-            }
-            
-            .search-input {
-                min-width: auto;
-            }
-            
-            .feature-list {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .loading::before {
-            content: "";
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #d4af37;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            color: #e74c3c;
-            background: rgba(231, 76, 60, 0.1);
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>✨ TRENDY FASHION</h1>
-            <p>20-30대 여성을 위한 패션 온라인 쇼핑몰 관리 시스템</p>
-            
-            <div class="search-container">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    class="search-input" 
-                    placeholder="상품명, 주문번호, 고객정보 등을 검색하세요..."
-                >
-                <button id="searchButton" class="search-button" onclick="searchData()">
-                    🔍 검색
-                </button>
-            </div>
-        </header>
-
-        <div class="main-content">
-            <aside class="sidebar">
-                <h3>📋 주요 기능</h3>
-                <ul class="feature-list">
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(0, '상품 관리')">
-                            상품 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(1, '주문 관리')">
-                            주문 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(2, '재고 관리')">
-                            재고 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(3, '결제 관리')">
-                            결제 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(4, '고객 관리')">
-                            고객 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(5, '매출 분석')">
-                            매출 분석
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(6, '카테고리 관리')">
-                            카테고리 관리
-                        </button>
-                    </li>
-                    <li class="feature-item">
-                        <button class="feature-button" onclick="loadFeatureData(7, '배송 관리')">
-                            배송 관리
-                        </button>
-                    </li>
-                </ul>
-            </aside>
-
-            <main class="content-area">
-                <div id="dynamicContent">
-                    <div class="loading">🚀 대시보드 로딩 중...</div>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">TRENDY FASHION</div>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="상품, 브랜드, 카테고리 검색...">
+                    <button id="searchButton" onclick="searchData()">검색</button>
                 </div>
-            </main>
+            </div>
         </div>
-    </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <ul class="nav-menu">
+                <li><a href="#" onclick="loadFeatureData(0, '상품 카탈로그')">상품 카탈로그</a></li>
+                <li><a href="#" onclick="loadFeatureData(1, '쇼핑 기능')">쇼핑 기능</a></li>
+                <li><a href="#" onclick="loadFeatureData(2, '상품 관리')">상품 관리</a></li>
+                <li><a href="#" onclick="loadFeatureData(3, '주문 관리')">주문 관리</a></li>
+                <li><a href="#" onclick="loadFeatureData(4, '재고 관리')">재고 관리</a></li>
+                <li><a href="#" onclick="loadFeatureData(5, '고객 관리')">고객 관리</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="feature-grid">
+                <div class="feature-card" onclick="loadFeatureData(0, '상품 카탈로그')">
+                    <h3>📱 상품 카탈로그</h3>
+                    <p>상품 목록, 상세 페이지, 카테고리 및 사이즈 필터링 기능을 관리합니다.</p>
+                </div>
+                <div class="feature-card" onclick="loadFeatureData(1, '쇼핑 기능')">
+                    <h3>🛒 쇼핑 기능</h3>
+                    <p>장바구니, 결제 시스템, 주문 내역 조회 기능을 제공합니다.</p>
+                </div>
+                <div class="feature-card" onclick="loadFeatureData(2, '상품 관리')">
+                    <h3>📦 상품 관리</h3>
+                    <p>상품 등록/수정/삭제, 이미지 업로드, 옵션 설정을 관리합니다.</p>
+                </div>
+                <div class="feature-card" onclick="loadFeatureData(3, '주문 관리')">
+                    <h3>📋 주문 관리</h3>
+                    <p>주문 내역 조회, 상태 관리, 배송 정보를 처리합니다.</p>
+                </div>
+                <div class="feature-card" onclick="loadFeatureData(4, '재고 관리')">
+                    <h3>📊 재고 관리</h3>
+                    <p>재고 수량 관리, 품절 상품 표시, 입출고 현황을 추적합니다.</p>
+                </div>
+                <div class="feature-card" onclick="loadFeatureData(5, '고객 관리')">
+                    <h3>👥 고객 관리</h3>
+                    <p>회원 정보, 리뷰 시스템, 위시리스트 기능을 관리합니다.</p>
+                </div>
+            </div>
+
+            <div id="dynamicContent">
+                <div style="text-align: center; padding: 40px; color: #6B7280;">
+                    <h2 style="color: #6366F1; margin-bottom: 20px;">TRENDY FASHION 관리 시스템</h2>
+                    <p>20-30대 여성을 위한 패션 온라인 쇼핑몰 관리 대시보드입니다.</p>
+                    <p>위의 기능 카드를 클릭하거나 검색을 통해 원하는 기능을 이용하세요.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>TRENDY FASHION</h4>
+                    <p>20-30대 여성을 위한 트렌디한 패션 아이템을 제공하는 온라인 쇼핑몰입니다.</p>
+                    <p>모바일 최적화된 쇼핑 경험을 통해 최신 패션 트렌드를 만나보세요.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>주요 카테고리</h4>
+                    <a href="#">상의</a>
+                    <a href="#">하의</a>
+                    <a href="#">아우터</a>
+                    <a href="#">원피스</a>
+                    <a href="#">액세서리</a>
+                    <a href="#">신발</a>
+                </div>
+                <div class="footer-section">
+                    <h4>고객 서비스</h4>
+                    <a href="#">주문/배송 조회</a>
+                    <a href="#">교환/반품</a>
+                    <a href="#">사이즈 가이드</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">고객센터</a>
+                </div>
+                <div class="footer-section">
+                    <h4>회사 정보</h4>
+                    <p>대표: TRENDY FASHION</p>
+                    <p>사업자등록번호: 123-45-67890</p>
+                    <p>통신판매업신고: 제2024-서울-0001호</p>
+                    <p>개인정보보호책임자: 홍길동</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script>
         async function callLLM(prompt) {
@@ -364,7 +407,6 @@
             const contentArea = document.getElementById('dynamicContent');
             if (!contentArea) return;
             
-            // 버튼 비활성화 및 로딩 상태 표시
             if (searchButton) {
                 searchButton.disabled = true;
                 searchButton.textContent = '검색 중...';
@@ -372,21 +414,7 @@
             
             contentArea.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">🔍 검색 중...</div>';
             
-            const searchPrompt = `"**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰" 프로젝트의 "${query}" 검색 결과를 생성해주세요:
-
-프로젝트 컨텍스트: **TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰
-주요 기능: 20-30대 여성을 위한 패션 온라인 쇼핑몰, 20-30대 여성 고객을 대상으로 한 트렌디한 패션 아이템 판매, 모바일 최적화된 쇼핑 경험 제공, 직관적이고 세련된 UI/UX를 통한 브랜드 차별화, **주 타겟**: 20-30대 여성, **특성**: 트렌디한 패션 아이템 선호, 모바일 쇼핑 활용도 높음, **구매 패턴**: 빠른 결제 프로세스 선호, 시각적 정보 중시, 고객용 쇼핑몰 웹사이트, 관리자용 상품/주문 관리 시스템, 결제 시스템 연동, 반응형 웹 디자인, 카테고리별 상품 분류 (상의, 하의, 아우터, 원피스, 액세서리, 신발), 사이즈별 필터링 (S, M, L, XL), 가격순, 인기순, 최신순 정렬, 다중 이미지 갤러리, 상품 설명, 가격, 사이즈 정보, 재고 현황 표시, 상품 추가/삭제/수량 변경, 총 금액 계산, 임시 저장 기능, 토스페이먼츠/아임포트 PG 연동, 다양한 결제 수단 지원, 주문 확인 및 영수증 발행, 상품 등록/수정/삭제, 다중 이미지 업로드, 카테고리 및 사이즈 설정, 주문 목록 조회, 주문 상태 변경, 배송 정보 관리, 재고 현황 모니터링, 재고 알림 설정, 입출고 관리, 페이지 로딩 시간: 3초 이내, 동시 접속자: 1,000명 지원, 이미지 최적화: WebP 포맷 지원, HTTPS 통신 필수, 결제 정보 암호화, SQL Injection 방지, XSS 공격 방지, 모바일 브라우저: iOS Safari, Android Chrome, 데스크톱 브라우저: Chrome, Firefox, Safari, Edge, 반응형 디자인: 320px ~ 1920px, React Router (페이지 라우팅), Styled-components (CSS-in-JS), Axios (HTTP 통신), React Query (상태 관리), Express.js (웹 프레임워크), MongoDB (데이터베이스), Mongoose (ODM), Multer (파일 업로드), 상품 목록 조회, 상품 상세 조회, 상품 등록 (관리자), 상품 수정 (관리자), 상품 삭제 (관리자), 주문 생성, 주문 목록 조회 (관리자), 주문 상태 변경 (관리자), 결제 준비, 결제 완료 처리, 1)}
-검색어: "${query}"
-
-요구사항:
-- 프로젝트 도메인에 맞는 검색 결과 생성
-- 검색어와 관련된 구체적이고 실용적인 정보
-- HTML 테이블, 카드, 리스트 형태로 구조화
-- 실제 데이터처럼 보이는 구체적인 수치와 내용
-- 현대적인 인라인 CSS 스타일링
-- 검색 결과 개수, 관련도, 날짜 등 메타 정보 포함
-
-HTML만 반환하고 추가 설명은 제외해주세요.`;
+            const searchPrompt = `"**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰" 프로젝트의 "${query}" 검색 결과를 생성해주세요. HTML만 반환하고 추가 설명은 제외해주세요.`;
             
             try {
                 const result = await callLLM(searchPrompt);
@@ -394,15 +422,13 @@ HTML만 반환하고 추가 설명은 제외해주세요.`;
             } catch (error) {
                 contentArea.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">검색 실패: ${error.message}</div>`;
             } finally {
-                // 버튼 복원
                 if (searchButton) {
                     searchButton.disabled = false;
-                    searchButton.textContent = '🔍 검색';
+                    searchButton.textContent = '검색';
                 }
             }
         }
 
-        // Enter 키로 검색 실행
         function setupSearchInput() {
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
@@ -421,49 +447,28 @@ HTML만 반환하고 추가 설명은 제외해주세요.`;
             
             contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">⚙️ 데이터 로딩 중...</div>';
             
-            const featurePrompt = `"${name}" 기능에 대한 전문적인 관리 화면을 HTML로 생성해주세요:
-
-요구사항:
-- ${name} 기능의 핵심 관리 요소들을 포함
-- 실제 관리자 시스템에서 볼 수 있는 데이터 테이블
-- 상태 표시기, 진행률, 통계 정보
-- 액션 버튼들 (수정, 삭제, 추가 등)
-- 필터링 및 정렬 옵션
-- 현대적인 인라인 CSS 스타일링
-- 실제 데이터처럼 보이는 구체적인 내용 (이름, 날짜, 수치 등)
-
-HTML만 반환하고 추가 설명은 제외해주세요.`;
+            const featurePrompt = `"${name}" 기능에 대한 관리 화면을 HTML로 생성해주세요. HTML만 반환하고 추가 설명은 제외해주세요.`;
             
             const result = await callLLM(featurePrompt);
             contentArea.innerHTML = result;
         }
 
         window.onload = async function() {
-            setupSearchInput(); // Enter 키 검색 설정
+            setupSearchInput();
             
             const contentArea = document.getElementById('dynamicContent');
             if (!contentArea) return;
             
             contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">🚀 대시보드 로딩 중...</div>';
             
-            const dashboardPrompt = `프로젝트 "**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰"에 적합한 관리자 대시보드 메인 화면을 HTML로 생성해주세요:
-
-주요 기능들: 20-30대 여성을 위한 패션 온라인 쇼핑몰, 20-30대 여성 고객을 대상으로 한 트렌디한 패션 아이템 판매, 모바일 최적화된 쇼핑 경험 제공, 직관적이고 세련된 UI/UX를 통한 브랜드 차별화, **주 타겟**: 20-30대 여성, **특성**: 트렌디한 패션 아이템 선호, 모바일 쇼핑 활용도 높음, **구매 패턴**: 빠른 결제 프로세스 선호, 시각적 정보 중시, 고객용 쇼핑몰 웹사이트, 관리자용 상품/주문 관리 시스템, 결제 시스템 연동, 반응형 웹 디자인, 카테고리별 상품 분류 (상의, 하의, 아우터, 원피스, 액세서리, 신발), 사이즈별 필터링 (S, M, L, XL), 가격순, 인기순, 최신순 정렬, 다중 이미지 갤러리, 상품 설명, 가격, 사이즈 정보, 재고 현황 표시, 상품 추가/삭제/수량 변경, 총 금액 계산, 임시 저장 기능, 토스페이먼츠/아임포트 PG 연동, 다양한 결제 수단 지원, 주문 확인 및 영수증 발행, 상품 등록/수정/삭제, 다중 이미지 업로드, 카테고리 및 사이즈 설정, 주문 목록 조회, 주문 상태 변경, 배송 정보 관리, 재고 현황 모니터링, 재고 알림 설정, 입출고 관리, 페이지 로딩 시간: 3초 이내, 동시 접속자: 1,000명 지원, 이미지 최적화: WebP 포맷 지원, HTTPS 통신 필수, 결제 정보 암호화, SQL Injection 방지, XSS 공격 방지, 모바일 브라우저: iOS Safari, Android Chrome, 데스크톱 브라우저: Chrome, Firefox, Safari, Edge, 반응형 디자인: 320px ~ 1920px, React Router (페이지 라우팅), Styled-components (CSS-in-JS), Axios (HTTP 통신), React Query (상태 관리), Express.js (웹 프레임워크), MongoDB (데이터베이스), Mongoose (ODM), Multer (파일 업로드), 상품 목록 조회, 상품 상세 조회, 상품 등록 (관리자), 상품 수정 (관리자), 상품 삭제 (관리자), 주문 생성, 주문 목록 조회 (관리자), 주문 상태 변경 (관리자), 결제 준비, 결제 완료 처리, 1)}
-
-요구사항:
-- 프로젝트 특성에 맞는 KPI 카드들 (매출, 사용자 수, 성장률, 활동 지표 등)
-- 실시간 통계 차트 (CSS로 구현된 간단한 바 차트나 도넛 차트)
-- 최근 활동 피드 또는 알림 목록
-- 빠른 액션 버튼들
-- 중요 메트릭 요약
-- 현대적이고 전문적인 인라인 CSS 스타일링
-- 실제 대시보드처럼 보이는 구체적인 데이터와 수치
-
-HTML만 반환하고 추가 설명은 제외해주세요.`;
+            const dashboardPrompt = `프로젝트 "**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰"에 적합한 대시보드를 HTML로 생성해주세요. HTML만 반환하고 추가 설명은 제외해주세요.`;
             
             const result = await callLLM(dashboardPrompt);
             contentArea.innerHTML = result;
         }
     </script>
+</body>
+</html>
+```
 </body>
 </html>
