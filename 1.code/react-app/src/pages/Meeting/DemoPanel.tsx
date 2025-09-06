@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Maximize, RefreshCw, Zap, ExternalLink, FileText, ChevronDown } from 'lucide-react'
+import { Maximize, RefreshCw, Zap, ExternalLink, FileText, ChevronDown, Copy } from 'lucide-react'
 import { useHtmlDemo } from '../../hooks/useHtmlDemo'
 import { useHtmlFiles } from '../../hooks/useApi'
 import { Button } from '../../components/ui'
@@ -8,17 +8,24 @@ interface DemoPanelProps {
   meetingId: string
 }
 
+interface HtmlFile {
+  id: number
+  version: number
+  created_at: string
+  s3_url: string
+}
+
 export default function DemoPanel({ meetingId }: DemoPanelProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [currentDemoUrl, setCurrentDemoUrl] = useState<string | null>(null)
   const [selectedHtmlId, setSelectedHtmlId] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   
   // HTML 데모 생성 훅
   const userId = 'user-' + Date.now() // 임시 사용자 ID
   const { 
     isGenerating, 
-    progress, 
     result, 
     error, 
     startGeneration, 
@@ -54,7 +61,7 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
   }, [htmlFiles, selectedHtmlId])
 
   const handleHtmlSelect = (htmlId: number) => {
-    const selectedHtml = htmlFiles?.find(html => html.id === htmlId)
+    const selectedHtml = htmlFiles?.find((html: HtmlFile) => html.id === htmlId)
     if (selectedHtml) {
       setSelectedHtmlId(htmlId)
       setCurrentDemoUrl(selectedHtml.s3_url)
@@ -89,6 +96,18 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
     setSelectedHtmlId(null)
   }
 
+  const handleCopyLink = async () => {
+    if (currentDemoUrl) {
+      try {
+        await navigator.clipboard.writeText(currentDemoUrl)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch (err) {
+        console.error('Failed to copy:', err)
+      }
+    }
+  }
+
   return (
     <div className="h-full flex flex-col p-4 sm:p-6">
       {/* 헤더 */}
@@ -111,7 +130,7 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
                 className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="">Select Version</option>
-                {htmlFiles.map((html) => (
+                {htmlFiles.map((html: HtmlFile) => (
                   <option key={html.id} value={html.id}>
                     v{html.version} - {new Date(html.created_at).toLocaleDateString()}
                   </option>
@@ -133,6 +152,16 @@ export default function DemoPanel({ meetingId }: DemoPanelProps) {
           
           {(result || currentDemoUrl) && (
             <>
+              <Button 
+                onClick={handleCopyLink}
+                variant="outline"
+                size="sm"
+                className={`text-xs sm:text-sm ${copied ? 'bg-green-50 border-green-300 text-green-700' : ''}`}
+              >
+                <Copy className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy Link'}</span>
+              </Button>
+              
               <Button 
                 onClick={handleRefresh}
                 variant="outline"
