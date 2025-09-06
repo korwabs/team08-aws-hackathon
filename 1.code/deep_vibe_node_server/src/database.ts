@@ -86,6 +86,19 @@ async function initializeDatabase(): Promise<void> {
       )
     `);
 
+    // PRD 파일 테이블
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS prd_files (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        room_id VARCHAR(36) NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        uploaded_by VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES chat_rooms (id)
+      )
+    `);
+
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Database initialization error:', error);
