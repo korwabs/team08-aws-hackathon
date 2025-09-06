@@ -81,21 +81,21 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     }
   }
 
-  const startTranscribe = (languageCode = 'ko-KR') => {
+  const startFileRecording = () => {
     if (globalSocket) {
-      globalSocket.emit('start-transcribe', { languageCode })
+      globalSocket.emit('start-file-recording')
     }
   }
 
-  const sendAudioData = (audioData: ArrayBuffer) => {
+  const sendAudioChunk = (chunk: Uint8Array) => {
     if (globalSocket) {
-      globalSocket.emit('audio-data', audioData)
+      globalSocket.emit('audio-chunk', chunk)
     }
   }
 
-  const stopTranscribe = () => {
+  const stopFileRecording = () => {
     if (globalSocket) {
-      globalSocket.emit('stop-transcribe')
+      globalSocket.emit('stop-file-recording')
     }
   }
 
@@ -107,34 +107,34 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     return () => {}
   }
 
-  const onTranscribeStarted = (callback: (data: any) => void) => {
+  const onFileRecordingStarted = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('transcribe-started', callback)
-      return () => globalSocket?.off('transcribe-started', callback)
+      globalSocket.on('file-recording-started', callback)
+      return () => globalSocket?.off('file-recording-started', callback)
     }
     return () => {}
   }
 
-  const onTranscribeResult = (callback: (data: any) => void) => {
+  const onFileRecordingStopped = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('transcribe-result', callback)
-      return () => globalSocket?.off('transcribe-result', callback)
+      globalSocket.on('file-recording-stopped', callback)
+      return () => globalSocket?.off('file-recording-stopped', callback)
     }
     return () => {}
   }
 
-  const onTranscribeStopped = (callback: (data: any) => void) => {
+  const onFileTranscribeComplete = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('transcribe-stopped', callback)
-      return () => globalSocket?.off('transcribe-stopped', callback)
+      globalSocket.on('file-transcribe-complete', callback)
+      return () => globalSocket?.off('file-transcribe-complete', callback)
     }
     return () => {}
   }
 
-  const onTranscribeError = (callback: (data: any) => void) => {
+  const onSttError = (callback: (data: any) => void) => {
     if (globalSocket) {
-      globalSocket.on('transcribe-error', callback)
-      return () => globalSocket?.off('transcribe-error', callback)
+      globalSocket.on('stt-error', callback)
+      return () => globalSocket?.off('stt-error', callback)
     }
     return () => {}
   }
@@ -143,13 +143,13 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     socket: globalSocket,
     isConnected,
     sendMessage,
-    startTranscribe,
-    sendAudioData,
-    stopTranscribe,
+    startFileRecording,
+    sendAudioChunk,
+    stopFileRecording,
     onMessage,
-    onTranscribeStarted,
-    onTranscribeResult,
-    onTranscribeStopped,
-    onTranscribeError,
+    onFileRecordingStarted,
+    onFileRecordingStopped,
+    onFileTranscribeComplete,
+    onSttError,
   }
 }
