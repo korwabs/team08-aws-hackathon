@@ -48,7 +48,9 @@ DeepVibe는 소규모 그룹 미팅에서 음성 대화와 시각적 목업을 �
 
 ## 동영상 데모
 
-*데모 영상은 추후 업데이트 예정입니다.*
+
+![최종영상](https://github.com/user-attachments/assets/225c74db-eda3-471b-a4f6-5f9c542e4d5c)
+
 
 ## 리소스 배포하기
 
@@ -75,15 +77,6 @@ AWS 인프라 배포를 위한 IaC 코드는 `2.iac` 디렉토리에 추가될 �
 - AI Services: Bedrock + Transcribe
 - Storage: S3
 
-### 리소스 정리
-
-```bash
-# 로컬 개발 서버 종료
-Ctrl + C
-
-# AWS 리소스 정리 (배포 후)
-# IaC 스크립트를 통한 리소스 삭제 예정
-```
 
 ## 프로젝트 기대 효과 및 예상 사용 사례
 
