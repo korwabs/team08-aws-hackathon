@@ -198,7 +198,8 @@ app.get("/api/rooms", async (req, res) => {
         r.*,
         COALESCE(m.total_messages, 0) as message_count,
         COALESCE(m.image_count, 0) as image_count,
-        COALESCE(h.html_count, 0) as html_count
+        COALESCE(h.html_count, 0) as html_count,
+        COALESCE(p.prd_count, 0) as prd_count
       FROM chat_rooms r
       LEFT JOIN (
         SELECT 
@@ -215,6 +216,13 @@ app.get("/api/rooms", async (req, res) => {
         FROM html_files 
         GROUP BY room_id
       ) h ON r.id = h.room_id
+      LEFT JOIN (
+        SELECT 
+          room_id,
+          COUNT(*) as prd_count
+        FROM prd_files 
+        GROUP BY room_id
+      ) p ON r.id = p.room_id
       ORDER BY r.created_at DESC
     `);
     res.json(rows);
@@ -453,6 +461,129 @@ app.get("/api/rooms/:roomId/html", async (req, res) => {
     res.json(htmlFiles);
   } catch (error: any) {
     console.error("HTML files fetch error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/prd:
+ *   post:
+ *     summary: PRD 파일 업로드
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               prd:
+ *                 type: string
+ *                 format: binary
+ *               uploadedBy:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: PRD 파일 업로드 성공
+ */
+app.post("/api/rooms/:roomId/prd", multer().single("prd"), async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { uploadedBy } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "PRD 파일이 필요합니다." });
+    }
+
+    if (!file.originalname.endsWith('.md')) {
+      return res.status(400).json({ error: "MD 파일만 업로드 가능합니다." });
+    }
+
+    const content = file.buffer.toString('utf-8');
+
+    await db.execute(
+      "INSERT INTO prd_files (room_id, filename, content, uploaded_by) VALUES (?, ?, ?, ?)",
+      [roomId, file.originalname, content, uploadedBy || 'anonymous']
+    );
+
+    res.json({ message: "PRD 파일이 성공적으로 업로드되었습니다." });
+  } catch (error: any) {
+    console.error("PRD upload error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/prd:
+ *   get:
+ *     summary: PRD 파일 목록 조회
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: PRD 파일 목록
+ */
+app.get("/api/rooms/:roomId/prd", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const [rows] = await db.execute(
+      "SELECT id, filename, uploaded_by, created_at FROM prd_files WHERE room_id = ? ORDER BY created_at DESC",
+      [roomId]
+    );
+    res.json(rows);
+  } catch (error: any) {
+    console.error("PRD files fetch error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/rooms/{roomId}/prd/{prdId}:
+ *   get:
+ *     summary: PRD 파일 내용 조회
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: prdId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: PRD 파일 내용
+ */
+app.get("/api/rooms/:roomId/prd/:prdId", async (req, res) => {
+  try {
+    const { roomId, prdId } = req.params;
+    const [rows]: any = await db.execute(
+      "SELECT * FROM prd_files WHERE room_id = ? AND id = ?",
+      [roomId, prdId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "PRD 파일을 찾을 수 없습니다." });
+    }
+
+    res.json(rows[0]);
+  } catch (error: any) {
+    console.error("PRD file fetch error:", error);
     res.status(500).json({ error: error.message });
   }
 });
