@@ -25,7 +25,7 @@ variable "model_temperature" {
 variable "max_tokens" {
   description = "Maximum tokens for model response"
   type        = string
-  default     = "4096"
+  default     = "8000"
 }
 
 variable "debug_mode" {
