@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 #### 서버 시작
 ```bash
-python start_server.py
+python server.py start
 ```
 
 #### API 호출
@@ -58,14 +58,14 @@ curl "http://localhost:8000/prd/PRD_20250906_110856.md"
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-### 2. 명령행 실행
+### 2. 직접 실행
 ```bash
-python run_prd_agent.py "대화요약내용" [prd_url] [image_url] [html_url]
+python server.py prd-run "대화요약내용" [prd_url] [image_url] [html_url]
 ```
 
 ### 3. JSON 파일 사용
 ```bash
-python run_prd_agent.py --json test_input.json
+python server.py prd-run --json test_input.json
 ```
 
 ### 4. Python 코드에서 직접 사용
@@ -85,70 +85,39 @@ prd_file = agent.generate_prd(
 ### POST /generate-prd
 PRD 파일 생성
 
-**Request Body:**
-```json
-{
-  "conversation_summary": "string (required)",
-  "prd_url": "string (optional)",
-  "image_url": "string (optional)", 
-  "html_url": "string (optional)"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "file_path": "prd_outputs/PRD_20250906_110856.md",
-  "message": "PRD 파일이 성공적으로 생성되었습니다."
-}
-```
-
 ### GET /prd/{filename}
 PRD 파일 내용 조회
 
-**Response:**
-```json
-{
-  "filename": "PRD_20250906_110856.md",
-  "content": "# Product Requirements Document..."
-}
-```
+### POST /generate-html
+PRD 파일로부터 HTML 생성
+
+### GET /html/{filename}
+생성된 HTML 파일 조회
 
 ### GET /health
 서버 상태 확인
 
-## 출력 결과
+## 동적 데이터 생성 기능
 
-생성된 PRD는 `prd_outputs/` 폴더에 `.md` 파일로 저장되며, 다음 섹션들을 포함합니다:
+생성된 HTML에는 다음 기능들이 자동으로 포함됩니다:
 
-- 프로젝트 개요
-- 요구사항 분석
-- 기술적 구현 사항
-- HTML 에이전트 실행 가이드
-- 데이터 처리 요구사항
-- 품질 보증 체크리스트
-
-## 특징
-
-### 동적 데이터 생성
-PRD에는 데이터 조회/생성 기능이 있는 HTML 요소마다 LLM API를 호출하여 맞춤형 데이터를 생성하는 코드가 자동으로 포함됩니다.
-
-### 리소스 조회 API
-HTML/이미지 URL이 제공된 경우, 해당 리소스를 조회하는 API 호출 가이드가 포함됩니다.
-
-### 완전한 구현 가이드
-HTML 에이전트가 바로 실행할 수 있는 상세한 기술적 구현 지침을 제공합니다.
+- **검색 기능**: 사용자가 검색어를 입력하면 LLM이 관련 데이터를 생성
+- **기능별 데이터 로드**: 각 기능 항목 클릭시 해당 기능에 맞는 데이터 생성
+- **초기 데이터 로드**: 페이지 로드시 대시보드용 초기 데이터 자동 생성
 
 ## 파일 구조
 
 ```
 langgraph/
-├── prd_agent.py          # 메인 PRD 생성 에이전트
-├── run_prd_agent.py      # 실행 스크립트
+├── prd_agent.py          # PRD 생성 에이전트
+├── html_agent.py         # HTML 생성 에이전트
+├── main.py               # 통합 API 서버 (PRD + HTML)
+├── server.py             # 통합 실행 스크립트 (서버 + CLI)
+├── test_html_agent.py    # HTML 에이전트 테스트
 ├── test_input.json       # 테스트용 입력 데이터
 ├── README.md             # 사용 가이드
-└── prd_outputs/          # 생성된 PRD 파일들
+├── prd_outputs/          # 생성된 PRD 파일들
+└── html_outputs/         # 생성된 HTML 파일들
 ```
 
 ## 테스트 실행
