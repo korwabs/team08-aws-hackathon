@@ -24,6 +24,7 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
 - **start-file-recording**: 파일 기반 녹음 시작
 - **audio-chunk**: 파일 기반 오디오 청크 전송 { chunk: ArrayBuffer }
 - **stop-file-recording**: 파일 기반 녹음 중지 및 STT 처리
+- **generate-html-demo**: HTML 데모 생성 요청 { roomId, userId, imageUrl?, prdUrl?, htmlUrl? }
 
 ### 서버 → 클라이언트  
 - **message-received**: 새 메시지 수신
@@ -33,6 +34,9 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
 - **file-transcribe-error**: 파일 STT 처리 오류
 - **user-joined**: 사용자 입장
 - **user-left**: 사용자 퇴장
+- **html-demo-progress**: HTML 데모 생성 진행 상황 { step, message }
+- **html-demo-complete**: HTML 데모 생성 완료 { success, message, prdFile, htmlFile }
+- **html-demo-error**: HTML 데모 생성 오류 { success, error }
 
 ## 성능 최적화
 - **실시간 STT**: 1024 샘플(64ms) 청크로 지연시간 최소화
@@ -76,6 +80,79 @@ WebSocket 기반 실시간 채팅과 AWS Transcribe 음성인식 API
           properties: {
             name: { type: 'string' },
             participants: { type: 'integer', default: 1, minimum: 1 }
+          }
+        },
+        HtmlDemoRequest: {
+          type: 'object',
+          properties: {
+            roomId: { type: 'string' },
+            userId: { type: 'string' },
+            imageUrl: { type: 'string', nullable: true },
+            prdUrl: { type: 'string', nullable: true },
+            htmlUrl: { type: 'string', nullable: true }
+          },
+          required: ['roomId', 'userId']
+        },
+        HtmlDemoProgress: {
+          type: 'object',
+          properties: {
+            step: { type: 'string', enum: ['summary', 'fastapi', 'upload'] },
+            message: { type: 'string' }
+          }
+        },
+        HtmlDemoComplete: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            prdFile: { type: 'string' },
+            htmlFile: { type: 'string' }
+          }
+        },
+        HtmlDemoError: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: { type: 'string' }
+          }
+        },
+        WebSocketEvents: {
+          type: 'object',
+          description: 'WebSocket 이벤트 목록',
+          properties: {
+            'join-room': {
+              type: 'string',
+              description: '채팅방 입장 (roomId 전송)'
+            },
+            'chat-message': {
+              type: 'object',
+              properties: {
+                roomId: { type: 'string' },
+                userId: { type: 'string' },
+                message: { type: 'string' }
+              }
+            },
+            'start-transcribe': {
+              type: 'object',
+              properties: {
+                languageCode: { type: 'string', default: 'ko-KR' }
+              }
+            },
+            'audio-data': {
+              type: 'string',
+              description: '오디오 데이터 (Binary)'
+            },
+            'stop-transcribe': {
+              type: 'string',
+              description: '음성인식 중지'
+            },
+            'set-user': {
+              type: 'string',
+              description: '사용자 ID 설정'
+            },
+            'generate-html-demo': {
+              $ref: '#/components/schemas/HtmlDemoRequest'
+            }
           }
         }
       }

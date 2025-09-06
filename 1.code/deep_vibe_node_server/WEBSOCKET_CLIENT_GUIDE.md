@@ -214,7 +214,475 @@ socket.on('transcribe-error', (error) => {
 });
 ```
 
-## 🔄 전체 워크플로우 예제
+## 🎨 HTML 데모 생성 기능
+
+### HTML 데모 생성 요청
+
+```javascript
+function generateHtmlDemo(roomId, userId, options = {}) {
+    const requestData = {
+        roomId: roomId,
+        userId: userId,
+        imageUrl: options.imageUrl || null,
+        prdUrl: options.prdUrl || null,
+        htmlUrl: options.htmlUrl || null
+    };
+    
+    console.log('HTML 데모 생성 요청:', requestData);
+    socket.emit('generate-html-demo', requestData);
+}
+
+// 사용 예제
+generateHtmlDemo('room-123', 'user-456', {
+    imageUrl: 'https://example.com/image.jpg',
+    prdUrl: 'https://example.com/prd.md'
+});
+```
+
+### HTML 데모 생성 이벤트 처리
+
+```javascript
+// 진행 상황 업데이트
+socket.on('html-demo-progress', (progress) => {
+    /*
+    progress 구조:
+    {
+        step: "summary" | "fastapi" | "upload",
+        message: "진행 상황 메시지"
+    }
+    */
+    
+    console.log(`진행 상황 [${progress.step}]:`, progress.message);
+    updateProgressUI(progress);
+});
+
+// 생성 완료
+socket.on('html-demo-complete', (result) => {
+    /*
+    result 구조:
+    {
+        success: true,
+        message: "성공 메시지",
+        prdFile: "S3 PRD 파일 URL",
+        htmlFile: "S3 HTML 파일 URL"
+    }
+    */
+    
+    console.log('HTML 데모 생성 완료:', result);
+    showSuccessMessage(result.message);
+    
+    // 생성된 파일 링크 표시
+    displayGeneratedFiles(result.prdFile, result.htmlFile);
+});
+
+// 생성 오류
+socket.on('html-demo-error', (error) => {
+    /*
+    error 구조:
+    {
+        success: false,
+        error: "오류 메시지"
+    }
+    */
+    
+    console.error('HTML 데모 생성 오류:', error);
+    showErrorMessage(error.error);
+});
+```
+
+### 완전한 HTML 데모 생성 클래스
+
+```javascript
+class HtmlDemoGenerator {
+    constructor(socket) {
+        this.socket = socket;
+        this.isGenerating = false;
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        this.socket.on('html-demo-progress', (progress) => {
+            this.onProgress(progress);
+        });
+        
+        this.socket.on('html-demo-complete', (result) => {
+            this.onComplete(result);
+        });
+        
+        this.socket.on('html-demo-error', (error) => {
+            this.onError(error);
+        });
+    }
+    
+    async generateDemo(roomId, userId, options = {}) {
+        if (this.isGenerating) {
+            throw new Error('이미 HTML 데모를 생성 중입니다.');
+        }
+        
+        this.isGenerating = true;
+        this.showProgressModal();
+        
+        try {
+            const requestData = {
+                roomId,
+                userId,
+                imageUrl: options.imageUrl || null,
+                prdUrl: options.prdUrl || null,
+                htmlUrl: options.htmlUrl || null
+            };
+            
+            console.log('HTML 데모 생성 시작:', requestData);
+            this.socket.emit('generate-html-demo', requestData);
+            
+        } catch (error) {
+            this.isGenerating = false;
+            this.hideProgressModal();
+            throw error;
+        }
+    }
+    
+    onProgress(progress) {
+        console.log(`[${progress.step}] ${progress.message}`);
+        this.updateProgressStep(progress.step, progress.message);
+    }
+    
+    onComplete(result) {
+        console.log('HTML 데모 생성 완료:', result);
+        this.isGenerating = false;
+        this.hideProgressModal();
+        this.showSuccessResult(result);
+    }
+    
+    onError(error) {
+        console.error('HTML 데모 생성 실패:', error);
+        this.isGenerating = false;
+        this.hideProgressModal();
+        this.showErrorResult(error);
+    }
+    
+    // UI 업데이트 메서드들
+    showProgressModal() {
+        const modal = document.getElementById('demo-progress-modal');
+        if (modal) {
+            modal.style.display = 'block';
+            this.resetProgressSteps();
+        }
+    }
+    
+    hideProgressModal() {
+        const modal = document.getElementById('demo-progress-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    updateProgressStep(step, message) {
+        const stepElements = {
+            'summary': document.getElementById('step-summary'),
+            'fastapi': document.getElementById('step-fastapi'),
+            'upload': document.getElementById('step-upload')
+        };
+        
+        // 모든 단계를 대기 상태로 리셋
+        Object.values(stepElements).forEach(el => {
+            if (el) {
+                el.className = 'progress-step waiting';
+            }
+        });
+        
+        // 현재 단계를 활성화
+        if (stepElements[step]) {
+            stepElements[step].className = 'progress-step active';
+            stepElements[step].querySelector('.step-message').textContent = message;
+        }
+    }
+    
+    resetProgressSteps() {
+        const steps = ['summary', 'fastapi', 'upload'];
+        steps.forEach(step => {
+            const element = document.getElementById(`step-${step}`);
+            if (element) {
+                element.className = 'progress-step waiting';
+                element.querySelector('.step-message').textContent = '대기 중...';
+            }
+        });
+    }
+    
+    showSuccessResult(result) {
+        const resultDiv = document.getElementById('demo-result');
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="success-message">
+                    <h3>✅ ${result.message}</h3>
+                    <div class="generated-files">
+                        <div class="file-link">
+                            <strong>PRD 파일:</strong>
+                            <a href="${result.prdFile}" target="_blank">다운로드</a>
+                        </div>
+                        <div class="file-link">
+                            <strong>HTML 파일:</strong>
+                            <a href="${result.htmlFile}" target="_blank">미리보기</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+    }
+    
+    showErrorResult(error) {
+        const resultDiv = document.getElementById('demo-result');
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="error-message">
+                    <h3>❌ 생성 실패</h3>
+                    <p>${error.error}</p>
+                    <button onclick="this.parentElement.parentElement.style.display='none'">
+                        닫기
+                    </button>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+    }
+}
+
+// 사용 예제
+const demoGenerator = new HtmlDemoGenerator(socket);
+
+// HTML 데모 생성 버튼 클릭 시
+document.getElementById('generate-demo-btn').addEventListener('click', async () => {
+    try {
+        await demoGenerator.generateDemo(
+            currentRoomId, 
+            currentUserId,
+            {
+                imageUrl: document.getElementById('image-url-input').value,
+                prdUrl: document.getElementById('prd-url-input').value,
+                htmlUrl: document.getElementById('html-url-input').value
+            }
+        );
+    } catch (error) {
+        alert(error.message);
+    }
+});
+```
+
+### HTML UI 예제
+
+```html
+<!-- HTML 데모 생성 UI -->
+<div id="html-demo-section">
+    <h3>🎨 HTML 데모 생성</h3>
+    
+    <!-- 입력 폼 -->
+    <div class="demo-inputs">
+        <div class="input-group">
+            <label>이미지 URL (선택사항):</label>
+            <input type="url" id="image-url-input" placeholder="https://example.com/image.jpg">
+        </div>
+        
+        <div class="input-group">
+            <label>PRD URL (선택사항):</label>
+            <input type="url" id="prd-url-input" placeholder="https://example.com/prd.md">
+        </div>
+        
+        <div class="input-group">
+            <label>HTML URL (선택사항):</label>
+            <input type="url" id="html-url-input" placeholder="https://example.com/template.html">
+        </div>
+        
+        <button id="generate-demo-btn" class="demo-btn">
+            🚀 HTML 데모 생성
+        </button>
+    </div>
+    
+    <!-- 진행 상황 모달 -->
+    <div id="demo-progress-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>HTML 데모 생성 중...</h3>
+            
+            <div class="progress-steps">
+                <div id="step-summary" class="progress-step waiting">
+                    <div class="step-icon">📝</div>
+                    <div class="step-info">
+                        <div class="step-title">채팅 요약</div>
+                        <div class="step-message">대기 중...</div>
+                    </div>
+                </div>
+                
+                <div id="step-fastapi" class="progress-step waiting">
+                    <div class="step-icon">🤖</div>
+                    <div class="step-info">
+                        <div class="step-title">AI 생성</div>
+                        <div class="step-message">대기 중...</div>
+                    </div>
+                </div>
+                
+                <div id="step-upload" class="progress-step waiting">
+                    <div class="step-icon">☁️</div>
+                    <div class="step-info">
+                        <div class="step-title">파일 업로드</div>
+                        <div class="step-message">대기 중...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 결과 표시 -->
+    <div id="demo-result" style="display: none;"></div>
+</div>
+
+<style>
+.demo-inputs {
+    margin: 20px 0;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.demo-btn {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.demo-btn:hover {
+    background: linear-gradient(45deg, #0056b3, #004085);
+}
+
+.demo-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.progress-steps {
+    margin-top: 20px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.progress-step.waiting {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.progress-step.active {
+    background: #e3f2fd;
+    color: #1976d2;
+    border-left: 4px solid #2196f3;
+}
+
+.progress-step.completed {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border-left: 4px solid #4caf50;
+}
+
+.step-icon {
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.step-info {
+    flex: 1;
+}
+
+.step-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.step-message {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.success-message {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.error-message {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.generated-files {
+    margin-top: 15px;
+}
+
+.file-link {
+    margin-bottom: 10px;
+}
+
+.file-link a {
+    color: #007bff;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.file-link a:hover {
+    text-decoration: underline;
+}
+</style>
+```
 
 ```javascript
 class ChatClient {
