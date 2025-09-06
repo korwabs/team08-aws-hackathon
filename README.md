@@ -49,7 +49,7 @@ DeepVibe는 소규모 그룹 미팅에서 음성 대화와 시각적 목업을 �
 ## 동영상 데모
 
 
-![Picture1](https://github.com/user-attachments/assets/a5093a81-87a0-42df-81fb-0eb0dfc25adb)
+![최종영상](https://github.com/user-attachments/assets/b41ae712-f6f3-435a-b67a-1f8bc3a2c0db)
 
 
 ## 리소스 배포하기
