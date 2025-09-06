@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 min-h-screen">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-500 to-pink-500 p-4">
+            <h1 class="text-white text-xl font-bold">Task Manager</h1>
+        </div>
+        
+        <div class="p-6">
+            <div class="mb-4">
+                <input 
+                    id="taskInput"
+                    type="text" 
+                    placeholder="Add new task..." 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+            </div>
+            
+            <div id="taskList" class="space-y-3">
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" class="mr-3" onchange="toggleTask(this)" />
+                    <span class="flex-1">Complete project proposal</span>
+                    <button class="text-red-500 hover:text-red-700" onclick="deleteTask(this)">×</button>
+                </div>
+                
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" checked class="mr-3" onchange="toggleTask(this)" />
+                    <span class="flex-1 line-through text-gray-500">Review meeting notes</span>
+                    <button class="text-red-500 hover:text-red-700" onclick="deleteTask(this)">×</button>
+                </div>
+                
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <input type="checkbox" class="mr-3" onchange="toggleTask(this)" />
+                    <span class="flex-1">Update documentation</span>
+                    <button class="text-red-500 hover:text-red-700" onclick="deleteTask(this)">×</button>
+                </div>
+            </div>
+            
+            <button onclick="addTask()" class="w-full mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg transition-colors">
+                Add Task
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function toggleTask(checkbox) {
+            const span = checkbox.nextElementSibling;
+            if (checkbox.checked) {
+                span.classList.add('line-through', 'text-gray-500');
+            } else {
+                span.classList.remove('line-through', 'text-gray-500');
+            }
+        }
+
+        function deleteTask(button) {
+            button.parentElement.remove();
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const taskText = input.value.trim();
+            if (!taskText) return;
+
+            const taskList = document.getElementById('taskList');
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'flex items-center p-3 bg-gray-50 rounded-lg';
+            taskDiv.innerHTML = `
+                <input type="checkbox" class="mr-3" onchange="toggleTask(this)" />
+                <span class="flex-1">${taskText}</span>
+                <button class="text-red-500 hover:text-red-700" onclick="deleteTask(this)">×</button>
+            `;
+            taskList.appendChild(taskDiv);
+            input.value = '';
+        }
+
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTask();
+            }
+        });
+    </script>
+</body>
+</html>

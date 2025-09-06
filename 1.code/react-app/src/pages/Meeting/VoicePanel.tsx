@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSocket } from '../../hooks/useSocket'
-import { useMessages } from '../../hooks/useApi'
+import { useMessages, queryKeys } from '../../hooks/useApi'
 
 interface VoicePanelProps {
   meetingId: string
@@ -17,18 +18,18 @@ interface Message {
 export default function VoicePanel({ meetingId }: VoicePanelProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [realtimeMessages, setRealtimeMessages] = useState<Message[]>([])
-  const [transcribeText, setTranscribeText] = useState('')
   const [status, setStatus] = useState('')
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   const audioStreamRef = useRef<MediaStream | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const userId = 'user-' + Date.now()
   const socket = useSocket({ roomId: meetingId, userId })
   const { data: messagesData, isLoading } = useMessages(meetingId)
+  const queryClient = useQueryClient()
 
   // 서버 메시지와 실시간 메시지 합치기
   const allMessages = [
@@ -53,31 +54,26 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
       setRealtimeMessages(prev => [...prev, message])
     })
 
-    // 음성인식 시작 확인
-    const unsubscribeStarted = socket.onTranscribeStarted(() => {
-      setStatus('🎤 음성인식 중...')
+    // 파일 녹음 시작 확인
+    const unsubscribeStarted = socket.onFileRecordingStarted(() => {
+      setStatus('🎤 녹음 중...')
     })
 
-    // 실시간 전사 결과
-    const unsubscribeResult = socket.onTranscribeResult((result) => {
-      setTranscribeText(result.transcript)
-      
-      if (!result.isPartial) {
-        // 최종 결과는 자동으로 메시지가 되므로 2초 후 텍스트 지움
-        setTimeout(() => {
-          setTranscribeText('')
-        }, 2000)
-      }
+    // 파일 녹음 중지 및 STT 결과
+    const unsubscribeStopped = socket.onFileRecordingStopped(() => {
+      setStatus('STT 처리 중...')
     })
 
-    // 음성인식 중지 확인
-    const unsubscribeStopped = socket.onTranscribeStopped(() => {
-      setStatus('음성인식이 중지되었습니다.')
-      setTranscribeText('')
+    // STT 완료 결과
+    const unsubscribeTranscribeComplete = socket.onFileTranscribeComplete((result) => {
+      setStatus('STT 완료')
+      // 메시지 쿼리 무효화하여 새 데이터 가져오기
+      queryClient.invalidateQueries({ queryKey: queryKeys.messages(meetingId) })
+      setTimeout(() => setStatus(''), 2000)
     })
 
-    // 음성인식 에러
-    const unsubscribeError = socket.onTranscribeError((error) => {
+    // STT 에러
+    const unsubscribeError = socket.onSttError((error) => {
       setStatus(`오류: ${error.error}`)
       stopRecording()
     })
@@ -85,21 +81,19 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
     return () => {
       unsubscribeMessage()
       unsubscribeStarted()
-      unsubscribeResult()
       unsubscribeStopped()
+      unsubscribeTranscribeComplete()
       unsubscribeError()
     }
   }, [socket])
 
   const startRecording = async () => {
     try {
-      // 소켓 연결 및 룸 참여 확인
       if (!socket.isConnected) {
         setStatus('서버에 연결 중입니다...')
         return
       }
 
-      // 1. 마이크 권한 요청
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { 
           sampleRate: 16000, 
@@ -107,42 +101,32 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
         }
       })
       
-      // 2. 오디오 컨텍스트 설정
-      const audioContext = new AudioContext({ sampleRate: 16000 })
-      const source = audioContext.createMediaStreamSource(stream)
-      const processor = audioContext.createScriptProcessor(4096, 1, 1)
+      audioStreamRef.current = stream
+      audioChunksRef.current = []
       
-      // 3. 실시간 오디오 데이터 처리
-      processor.onaudioprocess = (event) => {
-        const inputData = event.inputBuffer.getChannelData(0)
-        
-        // Float32Array를 16-bit PCM으로 변환
-        const pcmData = new Int16Array(inputData.length)
-        for (let i = 0; i < inputData.length; i++) {
-          pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768))
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      })
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+          
+          // 청크를 ArrayBuffer로 변환하여 전송
+          event.data.arrayBuffer().then(buffer => {
+            const uint8Array = new Uint8Array(buffer)
+            socket.sendAudioChunk(uint8Array)
+          })
         }
-        
-        // 서버로 오디오 데이터 전송
-        socket.sendAudioData(pcmData.buffer)
       }
       
-      source.connect(processor)
-      processor.connect(audioContext.destination)
-      
-      // 참조 저장
-      audioStreamRef.current = stream
-      audioContextRef.current = audioContext
-      processorRef.current = processor
+      mediaRecorderRef.current = mediaRecorder
+      mediaRecorder.start(1000) // 1초마다 청크 생성
       
       setIsRecording(true)
-      setStatus('음성인식을 시작합니다...')
+      setStatus('녹음을 시작합니다...')
       
-      // 4. 약간의 지연 후 서버에 음성인식 시작 요청 (오디오 설정 완료 대기)
-      setTimeout(() => {
-        if (socket.isConnected) {
-          socket.startTranscribe('ko-KR')
-        }
-      }, 100)
+      socket.startFileRecording()
       
     } catch (error) {
       setStatus('마이크 권한이 필요합니다.')
@@ -150,30 +134,19 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
   }
 
   const stopRecording = () => {
-    // 1. 오디오 스트림 중지
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+    }
+    
     if (audioStreamRef.current) {
       audioStreamRef.current.getTracks().forEach(track => track.stop())
       audioStreamRef.current = null
     }
     
-    // 2. 오디오 컨텍스트 종료
-    if (audioContextRef.current) {
-      audioContextRef.current.close()
-      audioContextRef.current = null
-    }
-    
-    // 3. 프로세서 정리
-    if (processorRef.current) {
-      processorRef.current.disconnect()
-      processorRef.current = null
-    }
-    
-    // 4. 서버에 중지 요청
-    socket.stopTranscribe()
+    socket.stopFileRecording()
     
     setIsRecording(false)
-    setStatus('')
-    setTranscribeText('')
+    setStatus('녹음 완료, STT 처리 중...')
   }
 
   return (
@@ -234,14 +207,6 @@ export default function VoicePanel({ meetingId }: VoicePanelProps) {
               : 'Click to start recording'
             }
           </p>
-
-          {/* 실시간 전사 텍스트 */}
-          {transcribeText && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 font-medium">실시간 전사:</p>
-              <p className="text-blue-700">{transcribeText}</p>
-            </div>
-          )}
         </div>
 
         {/* 실시간 메시지 표시 영역 */}
