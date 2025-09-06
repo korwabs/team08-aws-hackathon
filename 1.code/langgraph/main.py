@@ -73,6 +73,9 @@ async def run_workflow(request: PRDRequest):
             html_url=request.html_url
         )
         
+        # Node.js 서버로 파일 업로드 요청
+        await upload_files_to_nodejs(result['prd_file'], result['html_file'])
+        
         return WorkflowResponse(
             success=result['success'],
             prd_file=result['prd_file'],
@@ -82,6 +85,59 @@ async def run_workflow(request: PRDRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"워크플로우 실행 중 오류 발생: {str(e)}")
+
+async def upload_files_to_nodejs(prd_file_path: str, html_file_path: str):
+    """생성된 파일들을 Node.js 서버로 업로드"""
+    import aiohttp
+    import os
+    
+    nodejs_url = os.getenv('NODEJS_URL', 'http://localhost:3000')
+    
+    try:
+        # 파일 내용 읽기
+        with open(prd_file_path, 'r', encoding='utf-8') as f:
+            prd_content = f.read()
+        with open(html_file_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        async with aiohttp.ClientSession() as session:
+            # PRD 파일 업로드
+            prd_data = {
+                'content': prd_content,
+                'filename': os.path.basename(prd_file_path),
+                'contentType': 'text/markdown'
+            }
+            
+            async with session.post(f'{nodejs_url}/api/upload-file', json=prd_data) as response:
+                if response.status == 200:
+                    print(f"PRD 파일 업로드 성공: {prd_file_path}")
+                else:
+                    print(f"PRD 파일 업로드 실패: {response.status}")
+            
+            # HTML 파일 업로드
+            html_data = {
+                'content': html_content,
+                'filename': os.path.basename(html_file_path),
+                'contentType': 'text/html'
+            }
+            
+            async with session.post(f'{nodejs_url}/api/upload-file', json=html_data) as response:
+                if response.status == 200:
+                    print(f"HTML 파일 업로드 성공: {html_file_path}")
+                else:
+                    print(f"HTML 파일 업로드 실패: {response.status}")
+        
+        # 로컬 파일 삭제 (TODO 항목)
+        try:
+            os.unlink(prd_file_path)
+            os.unlink(html_file_path)
+            print(f"로컬 파일 삭제 완료: {prd_file_path}, {html_file_path}")
+        except Exception as e:
+            print(f"파일 삭제 실패: {e}")
+            
+    except Exception as e:
+        print(f"Node.js 업로드 오류: {e}")
+        # 업로드 실패해도 워크플로우는 계속 진행
 
 # LLM API 엔드포인트 (HTML에서 호출용)
 @app.post("/llm", response_model=LLMResponse)
