@@ -47,12 +47,11 @@ export const LoginForm = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border focus:outline-none focus:ring-2"
+              className="w-full px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
                 borderColor: tokens.colors.border,
                 borderRadius: tokens.borderRadius.sm,
-                fontSize: tokens.fontSize.base,
-                focusRingColor: tokens.colors.primary
+                fontSize: tokens.fontSize.base
               }}
               required
             />

@@ -79,3 +79,25 @@ export const useSummary = (roomId: string) => {
     enabled: !!roomId,
   })
 }
+
+// HTML Demo Generation (REST API fallback)
+export const useGenerateHtmlDemo = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ 
+      roomId, 
+      userId, 
+      options 
+    }: { 
+      roomId: string; 
+      userId: string; 
+      options?: { imageUrl?: string; prdUrl?: string; htmlUrl?: string } 
+    }) => api.generateHtmlDemo(roomId, userId, options),
+    onSuccess: (_, { roomId }) => {
+      // 성공 시 관련 쿼리들 무효화
+      queryClient.invalidateQueries({ queryKey: queryKeys.htmlFiles(roomId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.messages(roomId) })
+    },
+  })
+}

@@ -139,6 +139,41 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     return () => {}
   }
 
+  // HTML Demo 관련 함수들
+  const generateHtmlDemo = (options?: { imageUrl?: string; prdUrl?: string; htmlUrl?: string }) => {
+    if (roomId && userId && globalSocket) {
+      globalSocket.emit('generate-html-demo', {
+        roomId,
+        userId,
+        ...options
+      })
+    }
+  }
+
+  const onHtmlDemoProgress = (callback: (data: any) => void) => {
+    if (globalSocket) {
+      globalSocket.on('html-demo-progress', callback)
+      return () => globalSocket?.off('html-demo-progress', callback)
+    }
+    return () => {}
+  }
+
+  const onHtmlDemoComplete = (callback: (data: any) => void) => {
+    if (globalSocket) {
+      globalSocket.on('html-demo-complete', callback)
+      return () => globalSocket?.off('html-demo-complete', callback)
+    }
+    return () => {}
+  }
+
+  const onHtmlDemoError = (callback: (data: any) => void) => {
+    if (globalSocket) {
+      globalSocket.on('html-demo-error', callback)
+      return () => globalSocket?.off('html-demo-error', callback)
+    }
+    return () => {}
+  }
+
   return {
     socket: globalSocket,
     isConnected,
@@ -151,5 +186,9 @@ export const useSocket = ({ roomId, userId }: UseSocketProps = {}) => {
     onFileRecordingStopped,
     onFileTranscribeComplete,
     onSttError,
+    generateHtmlDemo,
+    onHtmlDemoProgress,
+    onHtmlDemoComplete,
+    onHtmlDemoError,
   }
 }

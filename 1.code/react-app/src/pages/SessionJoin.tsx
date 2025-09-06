@@ -1,17 +1,21 @@
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { Zap } from 'lucide-react'
 
 export default function SessionJoin() {
-  const { sessionId } = useParams<{ sessionId: string }>()
+  const [sessionId, setSessionId] = useState<string | null>(null)
 
   useEffect(() => {
+    // URL에서 세션 ID 추출
+    const pathSegments = window.location.pathname.split('/')
+    const id = pathSegments[pathSegments.length - 1]
+    setSessionId(id)
+    
     // Auto-redirect to main app with session ID
-    if (sessionId) {
-      const mainAppUrl = `${window.location.origin}?join=${sessionId}`
+    if (id) {
+      const mainAppUrl = `${window.location.origin}?join=${id}`
       window.location.href = mainAppUrl
     }
-  }, [sessionId])
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
