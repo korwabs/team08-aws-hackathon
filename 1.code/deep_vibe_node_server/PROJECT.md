@@ -1,4 +1,4 @@
-# Deep Vibe Node Server - 진행 상황
+# Deep Vibe Node Server
 
 > 전체 프로젝트 개요는 [../PROJECT.md](../PROJECT.md)를 참조하세요.
 
