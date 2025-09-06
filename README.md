@@ -102,4 +102,4 @@ Ctrl + C
 
 ---
 
-*Amazon Q Developer Hackathon 2024 - Team 08*
+*Amazon Q Developer Hackathon 2025 - Team 08*
