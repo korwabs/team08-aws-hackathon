@@ -364,7 +364,7 @@ class HTMLAgent:
                 modelId=self.model_id,
                 body=json.dumps({
                     "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": int(os.getenv("MAX_TOKENS", "8000")),
+                    "max_tokens": 8000,
                     "temperature": float(os.getenv("MODEL_TEMPERATURE", "0")),
                     "messages": [
                         {

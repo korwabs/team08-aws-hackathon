@@ -14,7 +14,7 @@ class OpenAIClient:
         
         self.client = OpenAI(api_key=self.api_key)
         self.model = "gpt-3.5-turbo"
-        self.max_tokens = int(os.getenv('MAX_TOKENS', '4096'))
+        self.max_tokens = 8000
         self.temperature = float(os.getenv('MODEL_TEMPERATURE', '0'))
         
         print(f"OpenAI 클라이언트 초기화: 모델 = {self.model}")

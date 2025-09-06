@@ -16,7 +16,7 @@ class BedrockClient:
             aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
         )
         self.model_id = os.getenv('BEDROCK_MODEL_ID', 'us.anthropic.claude-sonnet-4-20250514-v1:0')
-        self.max_tokens = int(os.getenv('MAX_TOKENS', '4096'))
+        self.max_tokens = 8000
         self.temperature = float(os.getenv('MODEL_TEMPERATURE', '0'))
         
         print(f"Bedrock 클라이언트 초기화: 모델 ID = {self.model_id}")
