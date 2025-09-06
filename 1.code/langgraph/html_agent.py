@@ -137,6 +137,8 @@ class HTMLAgent:
 
         async function searchData() {{
             const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            
             if (!searchInput) return;
             
             const query = searchInput.value?.trim();
@@ -148,23 +150,55 @@ class HTMLAgent:
             const contentArea = document.getElementById('dynamicContent');
             if (!contentArea) return;
             
-            contentArea.innerHTML = '<div style="text-align: center; padding: 20px;">🔍 검색 중...</div>';
+            // 버튼 비활성화 및 로딩 상태 표시
+            if (searchButton) {{
+                searchButton.disabled = true;
+                searchButton.textContent = '검색 중...';
+            }}
             
-            const searchPrompt = `다음 검색어에 대한 상세하고 유용한 정보를 HTML 형태로 생성해주세요:
+            contentArea.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">🔍 검색 중...</div>';
             
+            const searchPrompt = `"{structure['title']}" 프로젝트의 "${{query}}" 검색 결과를 생성해주세요:
+
+프로젝트 컨텍스트: {structure['title']}
+주요 기능: {', '.join(structure['features'])}
 검색어: "${{query}}"
 
 요구사항:
-- 검색어와 관련된 구체적이고 실용적인 정보 제공
-- HTML 테이블, 리스트, 카드 형태로 구조화된 데이터
+- 프로젝트 도메인에 맞는 검색 결과 생성
+- 검색어와 관련된 구체적이고 실용적인 정보
+- HTML 테이블, 카드, 리스트 형태로 구조화
 - 실제 데이터처럼 보이는 구체적인 수치와 내용
-- 인라인 CSS 스타일링으로 시각적으로 매력적인 디자인
-- 검색 결과가 풍부하고 유용하도록 구성
+- 현대적인 인라인 CSS 스타일링
+- 검색 결과 개수, 관련도, 날짜 등 메타 정보 포함
 
 HTML만 반환하고 추가 설명은 제외해주세요.`;
             
-            const result = await callLLM(searchPrompt);
-            contentArea.innerHTML = result;
+            try {{
+                const result = await callLLM(searchPrompt);
+                contentArea.innerHTML = result;
+            }} catch (error) {{
+                contentArea.innerHTML = `<div style="color: red; padding: 20px; text-align: center;">검색 실패: ${{error.message}}</div>`;
+            }} finally {{
+                // 버튼 복원
+                if (searchButton) {{
+                    searchButton.disabled = false;
+                    searchButton.textContent = '검색';
+                }}
+            }}
+        }}
+
+        // Enter 키로 검색 실행
+        function setupSearchInput() {{
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {{
+                searchInput.addEventListener('keypress', function(e) {{
+                    if (e.key === 'Enter') {{
+                        e.preventDefault();
+                        searchData();
+                    }}
+                }});
+            }}
         }}
 
         async function loadFeatureData(index, name) {{
@@ -191,6 +225,8 @@ HTML만 반환하고 추가 설명은 제외해주세요.`;
         }}
 
         window.onload = async function() {{
+            setupSearchInput(); // Enter 키 검색 설정
+            
             const contentArea = document.getElementById('dynamicContent');
             if (!contentArea) return;
             

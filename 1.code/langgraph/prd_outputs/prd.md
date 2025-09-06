@@ -3,18 +3,17 @@
 ## 프로젝트 개요
 
 ### 프로젝트명
-**FashionHub** - 20-30대 여성을 위한 트렌디 패션 온라인 쇼핑몰
+**TRENDY FASHION** - 20-30대 여성을 위한 패션 온라인 쇼핑몰
 
 ### 비즈니스 목표
-- 20-30대 여성 고객을 대상으로 한 패션 이커머스 플랫폼 구축
-- 모바일 최적화를 통한 사용자 경험 극대화
-- 직관적인 상품 검색 및 구매 프로세스 제공
-- 효율적인 관리자 시스템을 통한 운영 최적화
+- 20-30대 여성 고객을 대상으로 한 트렌디한 패션 아이템 판매
+- 모바일 최적화된 쇼핑 경험 제공
+- 직관적이고 세련된 UI/UX를 통한 브랜드 차별화
 
 ### 타겟 사용자
-- **주요 타겟**: 20-30대 여성
-- **특성**: 트렌디한 패션 아이템 선호, 모바일 쇼핑 선호
-- **행동 패턴**: 소셜미디어 활용도 높음, 빠른 결제 프로세스 선호
+- **주 타겟**: 20-30대 여성
+- **특성**: 트렌디한 패션 아이템 선호, 모바일 쇼핑 활용도 높음
+- **구매 패턴**: 빠른 결제 프로세스 선호, 시각적 정보 중시
 
 ### 프로젝트 범위
 - 고객용 쇼핑몰 웹사이트
@@ -26,372 +25,424 @@
 
 ### 기능적 요구사항
 
-#### 1. 고객 기능 (높은 우선순위)
-- **상품 브라우징**
-  - 상품 목록 페이지 (카테고리별, 필터링)
-  - 상품 상세 페이지 (이미지 갤러리, 상세 정보, 리뷰)
-  - 검색 기능
-  
-- **쇼핑 기능**
-  - 장바구니 추가/수정/삭제
-  - 위시리스트 기능
-  - 결제 프로세스 (토스페이먼츠/아임포트 연동)
-  
-- **사용자 계정**
-  - 회원가입/로그인
-  - 주문 내역 조회
-  - 개인정보 관리
-
-#### 2. 관리자 기능 (중간 우선순위)
-- **상품 관리**
-  - 상품 등록/수정/삭제
-  - 다중 이미지 업로드
-  - 재고 관리
-  
-- **주문 관리**
-  - 주문 현황 조회
-  - 배송 상태 관리
-  - 매출 통계
-
-#### 3. 카테고리 구조
+#### 1. 고객 기능 (우선순위: 높음)
 ```
-패션 아이템
-├── 상의 (블라우스, 티셔츠, 셔츠)
-├── 하의 (팬츠, 스커트, 레깅스)
-├── 아우터 (코트, 자켓, 가디건)
-├── 원피스 (미니, 미디, 맥시)
-├── 액세서리 (가방, 주얼리, 벨트)
-└── 신발 (힐, 플랫, 스니커즈)
+F001. 상품 목록 조회
+- 카테고리별 상품 분류 (상의, 하의, 아우터, 원피스, 액세서리, 신발)
+- 사이즈별 필터링 (S, M, L, XL)
+- 가격순, 인기순, 최신순 정렬
+
+F002. 상품 상세 정보
+- 다중 이미지 갤러리
+- 상품 설명, 가격, 사이즈 정보
+- 재고 현황 표시
+
+F003. 장바구니 시스템
+- 상품 추가/삭제/수량 변경
+- 총 금액 계산
+- 임시 저장 기능
+
+F004. 결제 시스템
+- 토스페이먼츠/아임포트 PG 연동
+- 다양한 결제 수단 지원
+- 주문 확인 및 영수증 발행
+```
+
+#### 2. 관리자 기능 (우선순위: 중간)
+```
+A001. 상품 관리
+- 상품 등록/수정/삭제
+- 다중 이미지 업로드
+- 카테고리 및 사이즈 설정
+
+A002. 주문 관리
+- 주문 목록 조회
+- 주문 상태 변경
+- 배송 정보 관리
+
+A003. 재고 관리
+- 재고 현황 모니터링
+- 재고 알림 설정
+- 입출고 관리
 ```
 
 ### 비기능적 요구사항
 
 #### 성능 요구사항
 - 페이지 로딩 시간: 3초 이내
+- 동시 접속자: 1,000명 지원
 - 이미지 최적화: WebP 포맷 지원
-- 동시 접속자: 1,000명 이상 지원
 
 #### 보안 요구사항
-- HTTPS 적용
-- 개인정보 암호화
-- 결제 정보 보안 (PCI DSS 준수)
+- HTTPS 통신 필수
+- 결제 정보 암호화
+- SQL Injection 방지
+- XSS 공격 방지
 
-#### 사용성 요구사항
-- 모바일 우선 반응형 디자인
-- 직관적인 네비게이션
-- 접근성 표준 준수 (WCAG 2.1)
+#### 호환성 요구사항
+- 모바일 브라우저: iOS Safari, Android Chrome
+- 데스크톱 브라우저: Chrome, Firefox, Safari, Edge
+- 반응형 디자인: 320px ~ 1920px
 
 ## 기술적 구현 사항
 
 ### 기술 스택
-```javascript
-// Frontend Stack
-const frontendStack = {
-  framework: "React 18.x",
-  stateManagement: "Redux Toolkit",
-  styling: "Styled-components + Tailwind CSS",
-  routing: "React Router v6",
-  httpClient: "Axios",
-  imageOptimization: "React Image Gallery"
-};
-
-// Backend Stack
-const backendStack = {
-  runtime: "Node.js 18.x",
-  framework: "Express.js",
-  database: "MongoDB with Mongoose",
-  authentication: "JWT + bcrypt",
-  fileUpload: "Multer + AWS S3",
-  paymentGateway: ["TossPayments", "Iamport"]
-};
 ```
+Frontend: React 18.x
+- React Router (페이지 라우팅)
+- Styled-components (CSS-in-JS)
+- Axios (HTTP 통신)
+- React Query (상태 관리)
 
-### 아키텍처 설계
+Backend: Node.js 18.x
+- Express.js (웹 프레임워크)
+- MongoDB (데이터베이스)
+- Mongoose (ODM)
+- Multer (파일 업로드)
 
-#### 프론트엔드 구조
-```
-src/
-├── components/
-│   ├── common/          # 공통 컴포넌트
-│   ├── product/         # 상품 관련 컴포넌트
-│   ├── cart/           # 장바구니 컴포넌트
-│   └── admin/          # 관리자 컴포넌트
-├── pages/
-├── hooks/              # 커스텀 훅
-├── store/              # Redux 스토어
-├── services/           # API 서비스
-└── utils/              # 유틸리티 함수
-```
-
-#### 백엔드 API 설계
-```javascript
-// API 엔드포인트 구조
-const apiEndpoints = {
-  // 상품 관련
-  products: {
-    getAll: "GET /api/products",
-    getById: "GET /api/products/:id",
-    create: "POST /api/products",
-    update: "PUT /api/products/:id",
-    delete: "DELETE /api/products/:id",
-    getByCategory: "GET /api/products/category/:category"
-  },
-  
-  // 주문 관련
-  orders: {
-    create: "POST /api/orders",
-    getByUser: "GET /api/orders/user/:userId",
-    updateStatus: "PUT /api/orders/:id/status"
-  },
-  
-  // 결제 관련
-  payments: {
-    process: "POST /api/payments/process",
-    verify: "POST /api/payments/verify",
-    cancel: "POST /api/payments/cancel"
-  }
-};
+Payment: 토스페이먼츠 또는 아임포트
+Infrastructure: AWS EC2, S3, CloudFront
 ```
 
 ### 데이터베이스 스키마
-
-#### 상품 스키마
 ```javascript
-const productSchema = {
-  _id: "ObjectId",
-  name: "String",
-  description: "String",
-  price: "Number",
-  category: "String",
-  sizes: ["String"], // ["S", "M", "L", "XL"]
-  colors: ["String"],
-  images: ["String"], // 이미지 URL 배열
-  stock: {
-    S: "Number",
-    M: "Number", 
-    L: "Number",
-    XL: "Number"
+// 상품 스키마
+const ProductSchema = {
+  _id: ObjectId,
+  name: String,
+  description: String,
+  price: Number,
+  category: String, // 상의, 하의, 아우터, 원피스, 액세서리, 신발
+  sizes: [String], // S, M, L, XL
+  images: [String],
+  stock: Number,
+  createdAt: Date,
+  updatedAt: Date
+};
+
+// 주문 스키마
+const OrderSchema = {
+  _id: ObjectId,
+  orderNumber: String,
+  customerInfo: {
+    name: String,
+    phone: String,
+    email: String,
+    address: String
   },
-  isActive: "Boolean",
-  createdAt: "Date",
-  updatedAt: "Date"
+  items: [{
+    productId: ObjectId,
+    quantity: Number,
+    size: String,
+    price: Number
+  }],
+  totalAmount: Number,
+  paymentStatus: String,
+  orderStatus: String,
+  createdAt: Date
 };
 ```
 
-#### 주문 스키마
+### API 엔드포인트 설계
 ```javascript
-const orderSchema = {
-  _id: "ObjectId",
-  userId: "ObjectId",
-  items: [{
-    productId: "ObjectId",
-    quantity: "Number",
-    size: "String",
-    price: "Number"
-  }],
-  totalAmount: "Number",
-  shippingAddress: "Object",
-  paymentInfo: "Object",
-  status: "String", // "pending", "paid", "shipped", "delivered"
-  createdAt: "Date"
-};
+// 상품 관련 API
+GET /api/products - 상품 목록 조회
+GET /api/products/:id - 상품 상세 조회
+POST /api/products - 상품 등록 (관리자)
+PUT /api/products/:id - 상품 수정 (관리자)
+DELETE /api/products/:id - 상품 삭제 (관리자)
+
+// 주문 관련 API
+POST /api/orders - 주문 생성
+GET /api/orders - 주문 목록 조회 (관리자)
+PUT /api/orders/:id - 주문 상태 변경 (관리자)
+
+// 결제 관련 API
+POST /api/payments/prepare - 결제 준비
+POST /api/payments/complete - 결제 완료 처리
 ```
 
 ## HTML 에이전트 실행 가이드
 
-### 개발 환경 설정
-
-#### 1. 프로젝트 초기화
-```bash
-# React 앱 생성
-npx create-react-app fashion-hub
-cd fashion-hub
-
-# 필요한 패키지 설치
-npm install redux @reduxjs/toolkit react-redux
-npm install react-router-dom axios
-npm install styled-components tailwindcss
-npm install react-image-gallery swiper
+### 프로젝트 구조
+```
+trendy-fashion/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── product/
+│   │   │   ├── cart/
+│   │   │   └── admin/
+│   │   ├── pages/
+│   │   ├── hooks/
+│   │   ├── utils/
+│   │   └── styles/
+│   └── package.json
+├── backend/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   └── server.js
+└── README.md
 ```
 
-#### 2. 백엔드 설정
+### 개발 환경 설정
 ```bash
-# 백엔드 디렉토리 생성
-mkdir fashion-hub-backend
-cd fashion-hub-backend
+# 프론트엔드 설정
+cd frontend
+npm install
+npm start
 
-# 패키지 초기화 및 설치
-npm init -y
-npm install express mongoose cors dotenv
-npm install jsonwebtoken bcryptjs multer
-npm install @tosspayments/payment-sdk iamport
+# 백엔드 설정
+cd backend
+npm install
+npm run dev
 ```
 
 ### 핵심 컴포넌트 구현
 
-#### 상품 목록 컴포넌트
+#### 1. 상품 목록 컴포넌트
 ```javascript
-// components/product/ProductList.jsx
+// src/components/product/ProductList.jsx
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts } from '../../store/productSlice';
+import styled from 'styled-components';
+import { getProducts } from '../../api/productAPI';
 
 const ProductList = () => {
-  const dispatch = useDispatch();
-  const { products, loading, filters } = useSelector(state => state.products);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedSize, setSelectedSize] = useState('all');
+  const [products, setProducts] = useState([]);
+  const [filters, setFilters] = useState({
+    category: '',
+    size: '',
+    sortBy: 'latest'
+  });
 
   useEffect(() => {
-    dispatch(fetchProducts({ category: selectedCategory, size: selectedSize }));
-  }, [dispatch, selectedCategory, selectedSize]);
+    fetchProducts();
+  }, [filters]);
 
-  const categories = ['all', '상의', '하의', '아우터', '원피스', '액세서리', '신발'];
-  const sizes = ['all', 'S', 'M', 'L', 'XL'];
+  const fetchProducts = async () => {
+    try {
+      const response = await getProducts(filters);
+      setProducts(response.data);
+    } catch (error) {
+      console.error('상품 조회 실패:', error);
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* 필터 섹션 */}
-      <div className="mb-8 bg-white p-6 rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 카테고리 필터 */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">카테고리</h3>
-            <div className="flex flex-wrap gap-2">
-              {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category === 'all' ? '전체' : category}
-                </button>
-              ))}
-            </div>
-          </div>
+    <Container>
+      <FilterSection>
+        <CategoryFilter>
+          <select 
+            value={filters.category} 
+            onChange={(e) => setFilters({...filters, category: e.target.value})}
+          >
+            <option value="">전체 카테고리</option>
+            <option value="상의">상의</option>
+            <option value="하의">하의</option>
+            <option value="아우터">아우터</option>
+            <option value="원피스">원피스</option>
+            <option value="액세서리">액세서리</option>
+            <option value="신발">신발</option>
+          </select>
+        </CategoryFilter>
+        
+        <SizeFilter>
+          <select 
+            value={filters.size} 
+            onChange={(e) => setFilters({...filters, size: e.target.value})}
+          >
+            <option value="">전체 사이즈</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+          </select>
+        </SizeFilter>
+      </FilterSection>
 
-          {/* 사이즈 필터 */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3 text-gray-800">사이즈</h3>
-            <div className="flex flex-wrap gap-2">
-              {sizes.map(size => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedSize === size
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {size === 'all' ? '전체' : size}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 상품 그리드 */}
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map(product => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-        </div>
-      )}
-    </div>
+      <ProductGrid>
+        {products.map(product => (
+          <ProductCard key={product._id}>
+            <ProductImage src={product.images[0]} alt={product.name} />
+            <ProductInfo>
+              <ProductName>{product.name}</ProductName>
+              <ProductPrice>{product.price.toLocaleString()}원</ProductPrice>
+            </ProductInfo>
+          </ProductCard>
+        ))}
+      </ProductGrid>
+    </Container>
   );
 };
 
-// 상품 카드 컴포넌트
-const ProductCard = ({ product }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+`;
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div 
-        className="relative aspect-square overflow-hidden cursor-pointer"
-        onMouseEnter={() => setCurrentImageIndex(1)}
-        onMouseLeave={() => setCurrentImageIndex(0)}
-      >
-        <img
-          src={product.images[currentImageIndex] || product.images[0]}
-          alt={product.name}
-          className="w-full h-full object-cover transition-transform hover:scale-105"
-        />
-        {product.images.length > 1 && (
-          <div className="absolute bottom-2 left-2 flex space-x-1">
-            {product.images.map((_, index) => (
-              <div
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <div className="p-4">
-        <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
-          {product.name}
-        </h3>
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-black">
-            {product.price.toLocaleString()}원
-          </span>
-          <div className="flex space-x-1">
-            {product.sizes.map(size => (
-              <span key={size} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                {size}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+const FilterSection = styled.div`
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const ProductGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+`;
+
+const ProductCard = styled.div`
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+`;
+
+const ProductImage = styled.img`
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+`;
+
+const ProductInfo = styled.div`
+  padding: 15px;
+`;
+
+const ProductName = styled.h3`
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #333;
+`;
+
+const ProductPrice = styled.p`
+  font-size: 18px;
+  font-weight: bold;
+  color: #d4af37; /* 골드 컬러 */
+`;
 
 export default ProductList;
 ```
 
-#### 장바구니 컴포넌트
+#### 2. 장바구니 컴포넌트
 ```javascript
-// components/cart/Cart.jsx
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateQuantity, removeFromCart } from '../../store/cartSlice';
+// src/components/cart/Cart.jsx
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import { getCartItems, updateCartItem, removeCartItem } from '../../api/cartAPI';
 
 const Cart = () => {
-  const dispatch = useDispatch();
-  const { items, totalAmount } = useSelector(state => state.cart);
+  const [cartItems, setCartItems] = useState([]);
+  const [totalAmount, setTotalAmount] = useState(0);
 
-  const handleQuantityChange = (itemId, newQuantity) => {
-    if (newQuantity === 0) {
-      dispatch(removeFromCart(itemId));
-    } else {
-      dispatch(updateQuantity({ itemId, quantity: newQuantity }));
+  useEffect(() => {
+    fetchCartItems();
+  }, []);
+
+  useEffect(() => {
+    calculateTotal();
+  }, [cartItems]);
+
+  const fetchCartItems = async () => {
+    try {
+      const response = await getCartItems();
+      setCartItems(response.data);
+    } catch (error) {
+      console.error('장바구니 조회 실패:', error);
     }
   };
 
-  const handleCheckout = () => {
-    // 결제 프로세스 시작
-    initiatePayment();
+  const calculateTotal = () => {
+    const total = cartItems.reduce((sum, item) => 
+      sum + (item.price * item.quantity), 0
+    );
+    setTotalAmount(total);
+  };
+
+  const handleQuantityChange = async (itemId, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    try {
+      await updateCartItem(itemId, { quantity: newQuantity });
+      setCartItems(cartItems.map(item => 
+        item._id === itemId ? {...item, quantity: newQuantity} : item
+      ));
+    } catch (error) {
+      console.error('수량 변경 실패:', error);
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    try {
+      await removeCartItem(itemId);
+      setCartItems(cartItems.filter(item => item._id !== itemId));
+    } catch (error) {
+      console.error('상품 삭제 실패:', error);
+    }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">장바구니</h1>
+    <Container>
+      <Title>장바구니</Title>
       
-      {items.
+      {cartItems.length === 0 ? (
+        <EmptyCart>장바구니가 비어있습니다.</EmptyCart>
+      ) : (
+        <>
+          <CartItemList>
+            {cartItems.map(item => (
+              <CartItem key={item._id}>
+                <ItemImage src={item.product.images[0]} alt={item.product.name} />
+                <ItemInfo>
+                  <ItemName>{item.product.name}</ItemName>
+                  <ItemSize>사이즈: {item.size}</ItemSize>
+                  <ItemPrice>{item.price.toLocaleString()}원</ItemPrice>
+                </ItemInfo>
+                <QuantityControl>
+                  <QuantityButton 
+                    onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
+                  >
+                    -
+                  </QuantityButton>
+                  <Quantity>{item.quantity}</Quantity>
+                  <QuantityButton 
+                    onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
+                  >
+                    +
+                  </QuantityButton>
+                </QuantityControl>
+                <RemoveButton onClick={() => handleRemoveItem(item._id)}>
+                  삭제
+                </RemoveButton>
+              </CartItem>
+            ))}
+          </CartItemList>
+          
+          <CartSummary>
+            <TotalAmount>총 금액: {totalAmount.toLocaleString()}원</TotalAmount>
+            <CheckoutButton>결제하기</CheckoutButton>
+          </CartSummary>
+        </>
+      )}
+    </Container>
+  );
+};
