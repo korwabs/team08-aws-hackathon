@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Camera } from 'lucide-react'
 import { useUploadImage } from '../../hooks/useApi'
 
 interface FloatingDemoButtonProps {
@@ -45,18 +46,17 @@ export default function FloatingDemoButton({ meetingId, userId }: FloatingDemoBu
       <button
         onClick={handleClick}
         disabled={uploadImageMutation.isPending}
-        className={`fixed bottom-8 right-8 w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-200 hover:scale-105 ${
+        className={`fixed bottom-8 right-8 w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-white transition-all duration-200 hover:scale-105 z-50 ${
           uploadImageMutation.isPending 
             ? 'bg-gray-400 cursor-not-allowed' 
-            : 'bg-blue-500 hover:bg-blue-600'
+            : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
         }`}
+        title="이미지 업로드"
       >
         {uploadImageMutation.isPending ? (
           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
         ) : (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
+          <Camera className="w-8 h-8" />
         )}
       </button>
     </>

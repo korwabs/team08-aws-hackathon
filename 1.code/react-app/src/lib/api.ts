@@ -51,6 +51,7 @@ export const api = {
       body: formData
     })
     if (!response.ok) throw new Error('Failed to upload HTML')
+    return response.json()
   },
 
   getHtmlFiles: async (roomId: string) => {
@@ -63,6 +64,24 @@ export const api = {
   getSummary: async (roomId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/summary`)
     if (!response.ok) throw new Error('Failed to fetch summary')
+    return response.json()
+  },
+
+  // HTML Demo Generation (REST API fallback)
+  generateHtmlDemo: async (roomId: string, userId: string, options?: { 
+    imageUrl?: string; 
+    prdUrl?: string; 
+    htmlUrl?: string 
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/generate-demo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        ...options
+      })
+    })
+    if (!response.ok) throw new Error('Failed to generate HTML demo')
     return response.json()
   }
 }
