@@ -175,6 +175,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "S3_BUCKET_NAME"
           value = aws_s3_bucket.prd_files.bucket
+        },
+        {
+          name  = "OPEN_AI_KEY"
+          value = var.openai_api_key
+        },
+        {
+          name  = "NODEJS_URL"
+          value = var.nodejs_url
         }
       ]
 
@@ -197,6 +205,7 @@ resource "aws_lb" "main" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.app.id]
   subnets           = aws_subnet.public[*].id
+  idle_timeout       = 300
 }
 
 resource "aws_lb_target_group" "app" {

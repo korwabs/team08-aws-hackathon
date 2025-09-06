@@ -4,9 +4,10 @@ from html_agent import HTMLAgent
 import os
 
 class Workflow:
-    def __init__(self, llm_api_url: str = "http://localhost:8000/llm"):
+    def __init__(self, llm_api_url: str = None):
         self.prd_agent = PRDAgent()
-        self.html_agent = HTMLAgent(llm_api_url)
+        llm_url = llm_api_url or os.getenv('LLM_API_URL', 'https://d2co7xon1r3p3l.cloudfront.net/llm')
+        self.html_agent = HTMLAgent(llm_url)
     
     def run_complete_workflow(self, conversation_summary: str, prd_url: str = None, 
                             image_url: str = None, html_url: str = None):
