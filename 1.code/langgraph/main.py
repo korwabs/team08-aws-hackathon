@@ -24,7 +24,8 @@ app.add_middleware(
 openai_client = OpenAIClient()
 
 # 워크플로우 초기화
-workflow = Workflow()
+llm_url = os.getenv('LLM_API_URL', 'https://d2co7xon1r3p3l.cloudfront.net/llm')
+workflow = Workflow(llm_url)
 
 # PRD 관련 모델
 class PRDRequest(BaseModel):
@@ -41,7 +42,7 @@ class PRDResponse(BaseModel):
 # HTML 관련 모델
 class HTMLRequest(BaseModel):
     prd_file_path: str
-    llm_api_url: str = "http://localhost:8000/llm"
+    llm_api_url: str = None
 
 class HTMLResponse(BaseModel):
     success: bool
@@ -49,6 +50,13 @@ class HTMLResponse(BaseModel):
     message: str
 
 # 워크플로우 모델
+class WorkflowRequest(BaseModel):
+    conversation_summary: str
+    prd_url: Optional[str] = None
+    image_url: Optional[str] = None
+    html_url: Optional[str] = None
+    room_id: Optional[str] = "default"
+
 class WorkflowResponse(BaseModel):
     success: bool
     prd_file: str
@@ -64,7 +72,7 @@ class LLMResponse(BaseModel):
 
 # 워크플로우 API 엔드포인트 (PRD → HTML 자동 생성)
 @app.post("/workflow", response_model=WorkflowResponse)
-async def run_workflow(request: PRDRequest):
+async def run_workflow(request: WorkflowRequest):
     try:
         result = workflow.run_complete_workflow(
             conversation_summary=request.conversation_summary,
@@ -72,6 +80,9 @@ async def run_workflow(request: PRDRequest):
             image_url=request.image_url,
             html_url=request.html_url
         )
+        
+        # Node.js 서버로 파일 업로드 요청
+        await upload_files_to_nodejs(result['prd_file'], result['html_file'], request.room_id)
         
         return WorkflowResponse(
             success=result['success'],
@@ -82,6 +93,55 @@ async def run_workflow(request: PRDRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"워크플로우 실행 중 오류 발생: {str(e)}")
+
+async def upload_files_to_nodejs(prd_file_path: str, html_file_path: str, room_id: str = "default"):
+    """생성된 파일들을 Node.js 서버의 기존 업로드 API로 업로드"""
+    import aiohttp
+    import os
+    
+    nodejs_url = os.getenv('NODEJS_URL', 'http://localhost:3000')
+    
+    try:
+        # 파일 내용을 텍스트로 읽기
+        with open(prd_file_path, 'r', encoding='utf-8') as f:
+            prd_content = f.read()
+        with open(html_file_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        async with aiohttp.ClientSession() as session:
+            # PRD 파일 업로드
+            prd_data = aiohttp.FormData()
+            prd_data.add_field('prd', prd_content, filename=os.path.basename(prd_file_path), content_type='text/markdown')
+            prd_data.add_field('uploadedBy', 'fastapi-agent')
+            
+            async with session.post(f'{nodejs_url}/api/rooms/{room_id}/prd', data=prd_data) as response:
+                if response.status == 200:
+                    print(f"PRD 파일 업로드 성공: {prd_file_path}")
+                else:
+                    print(f"PRD 파일 업로드 실패: {response.status}")
+        
+            # HTML 파일 업로드
+            html_data = aiohttp.FormData()
+            html_data.add_field('html', html_content, filename=os.path.basename(html_file_path), content_type='text/html')
+            html_data.add_field('userId', 'fastapi-agent')
+            
+            async with session.post(f'{nodejs_url}/api/rooms/{room_id}/html', data=html_data) as response:
+                if response.status == 200:
+                    print(f"HTML 파일 업로드 성공: {html_file_path}")
+                else:
+                    print(f"HTML 파일 업로드 실패: {response.status}")
+        
+        # 로컬 파일 삭제 (TODO 항목)
+        try:
+            os.unlink(prd_file_path)
+            os.unlink(html_file_path)
+            print(f"로컬 파일 삭제 완료: {prd_file_path}, {html_file_path}")
+        except Exception as e:
+            print(f"파일 삭제 실패: {e}")
+            
+    except Exception as e:
+        print(f"Node.js 업로드 오류: {e}")
+        # 업로드 실패해도 워크플로우는 계속 진행
 
 # LLM API 엔드포인트 (HTML에서 호출용)
 @app.post("/llm", response_model=LLMResponse)

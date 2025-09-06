@@ -50,6 +50,8 @@ resource "aws_iam_role_policy" "bedrock_policy" {
       {
         Effect = "Allow"
         Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
           "bedrock-runtime:InvokeModel",
           "bedrock-runtime:InvokeModelWithResponseStream"
         ]

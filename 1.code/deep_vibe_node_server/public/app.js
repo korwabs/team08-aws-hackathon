@@ -127,10 +127,141 @@ function displaySummary(data) {
                 <div class="stat-label">이미지</div>
             </div>
         </div>
+        <div class="summary-actions">
+            <button class="btn btn-primary" onclick="generateHtmlDemo()" style="width: 100%; margin-bottom: 15px;">
+                🚀 HTML 데모 생성
+            </button>
+        </div>
         <div class="summary-text">
             ${htmlContent}
         </div>
     `;
+}
+
+// HTML 데모 생성 함수 (WebSocket 방식)
+async function generateHtmlDemo() {
+    if (!currentRoomId) {
+        alert('채팅방을 선택해주세요.');
+        return;
+    }
+
+    // 로딩 상태 표시
+    const generateBtn = document.querySelector('.summary-actions button');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '⏳ 생성 중...';
+    generateBtn.disabled = true;
+
+    try {
+        // 진행 상황 표시 영역 생성
+        const actionsDiv = document.querySelector('.summary-actions');
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'demo-progress';
+        progressDiv.style.cssText = 'margin-top: 15px; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #2196F3;';
+        progressDiv.innerHTML = `
+            <div style="font-weight: bold; color: #1976D2; margin-bottom: 10px;">🚀 HTML 데모 생성 진행 상황</div>
+            <div class="progress-message">시작 중...</div>
+        `;
+        actionsDiv.appendChild(progressDiv);
+
+        // WebSocket 이벤트 리스너 등록
+        const progressMessage = progressDiv.querySelector('.progress-message');
+        
+        const handleProgress = (data) => {
+            console.log('HTML 데모 진행:', data);
+            progressMessage.textContent = data.message;
+        };
+
+        const handleComplete = (result) => {
+            console.log('HTML 데모 완료:', result);
+            
+            // 진행 상황 숨기기
+            progressDiv.remove();
+            
+            // 성공 메시지 표시
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'demo-result';
+            resultDiv.style.cssText = 'margin-top: 15px; padding: 15px; background: #e8f5e8; border-radius: 8px;';
+            resultDiv.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; color: #2e7d32;">🎉 HTML 데모 생성 완료!</h4>
+                <p style="margin: 5px 0; color: #388e3c;">PRD와 HTML이 성공적으로 생성되어 S3에 업로드되었습니다.</p>
+                <div style="margin: 10px 0;">
+                    <strong>생성된 파일:</strong><br>
+                    • PRD: ${result.prdFile}<br>
+                    • HTML: ${result.htmlFile}
+                </div>
+            `;
+            actionsDiv.appendChild(resultDiv);
+            
+            // 버튼 복원
+            generateBtn.innerHTML = '✅ 생성 완료!';
+            generateBtn.disabled = false;
+            
+            // 3초 후 원래 상태로
+            setTimeout(() => {
+                generateBtn.innerHTML = originalText;
+            }, 3000);
+            
+            // 이벤트 리스너 정리
+            socket.off('html-demo-progress', handleProgress);
+            socket.off('html-demo-complete', handleComplete);
+            socket.off('html-demo-error', handleError);
+        };
+
+        const handleError = (error) => {
+            console.error('HTML 데모 오류:', error);
+            
+            // 진행 상황 숨기기
+            progressDiv.remove();
+            
+            // 오류 메시지 표시
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'demo-error';
+            errorDiv.style.cssText = 'margin-top: 15px; padding: 15px; background: #ffebee; border-radius: 8px;';
+            errorDiv.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; color: #c62828;">❌ 생성 실패</h4>
+                <p style="margin: 5px 0; color: #d32f2f;">${error.error}</p>
+                <button onclick="generateHtmlDemo()" class="btn btn-primary" style="margin-top: 10px;">
+                    🔄 다시 시도
+                </button>
+            `;
+            actionsDiv.appendChild(errorDiv);
+            
+            // 버튼 복원
+            generateBtn.innerHTML = '❌ 생성 실패';
+            generateBtn.disabled = false;
+            
+            // 3초 후 원래 상태로
+            setTimeout(() => {
+                generateBtn.innerHTML = originalText;
+            }, 3000);
+            
+            // 이벤트 리스너 정리
+            socket.off('html-demo-progress', handleProgress);
+            socket.off('html-demo-complete', handleComplete);
+            socket.off('html-demo-error', handleError);
+        };
+
+        socket.on('html-demo-progress', handleProgress);
+        socket.on('html-demo-complete', handleComplete);
+        socket.on('html-demo-error', handleError);
+
+        // WebSocket으로 HTML 데모 생성 요청
+        socket.emit('generate-html-demo', {
+            roomId: currentRoomId,
+            userId: localStorage.getItem('userId') || 'anonymous'
+        });
+
+    } catch (error) {
+        console.error('HTML 데모 생성 오류:', error);
+        generateBtn.innerHTML = '❌ 생성 실패';
+        generateBtn.disabled = false;
+        
+        setTimeout(() => {
+            generateBtn.innerHTML = originalText;
+        }, 3000);
+        
+        alert('HTML 데모 생성 중 오류가 발생했습니다.');
+    }
 }
 
 // Socket 이벤트 리스너

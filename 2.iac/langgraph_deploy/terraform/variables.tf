@@ -45,3 +45,15 @@ variable "domain_name" {
   type        = string
   default     = ""
 }
+
+variable "openai_api_key" {
+  description = "OpenAI API Key"
+  type        = string
+  sensitive   = true
+}
+
+variable "nodejs_url" {
+  description = "Node.js server URL"
+  type        = string
+  default     = ""
+}

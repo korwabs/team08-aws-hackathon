@@ -5,8 +5,8 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 class HTMLAgent:
-    def __init__(self, llm_api_url: str = "http://localhost:8000/llm"):
-        self.llm_api_url = llm_api_url
+    def __init__(self, llm_api_url: str = None):
+        self.llm_api_url = llm_api_url or os.getenv('LLM_API_URL', 'https://d2co7xon1r3p3l.cloudfront.net/llm') or os.getenv('LLM_API_URL', 'http://langgraph-prd-alb-88774834.us-east-1.elb.amazonaws.com/llm')
         self.output_dir = "html_outputs"
         os.makedirs(self.output_dir, exist_ok=True)
     

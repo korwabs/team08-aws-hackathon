@@ -658,6 +658,85 @@ app.get("/api/rooms/:roomId/summary", async (req, res) => {
 
 /**
  * @swagger
+ * /api/rooms/{roomId}/generate-html-demo:
+ *   post:
+ *     summary: HTML 데모 생성
+ *     description: FastAPI를 통해 PRD와 HTML을 생성하고 S3에 업로드
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               prdUrl:
+ *                 type: string
+ *               htmlUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: HTML 데모 생성 성공
+ */
+app.post("/api/rooms/:roomId/generate-html-demo", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { userId, imageUrl, prdUrl, htmlUrl } = req.body;
+
+    // 1. 채팅 요약 가져오기
+    const summary = await chatSummaryService.summarizeChat(roomId);
+
+    // 2. FastAPI 호출하여 워크플로우 실행 (FastAPI가 파일 업로드까지 처리)
+    const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:8000';
+    const workflowResponse = await fetch(`${fastApiUrl}/workflow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_summary: summary.summary,
+        prd_url: prdUrl,
+        image_url: imageUrl,
+        html_url: htmlUrl,
+        room_id: roomId
+      })
+    });
+
+    if (!workflowResponse.ok) {
+      throw new Error(`FastAPI 호출 실패: ${workflowResponse.status}`);
+    }
+
+    const workflowResult = await workflowResponse.json() as {
+      success: boolean;
+      prd_file: string;
+      html_file: string;
+      message: string;
+    };
+
+    res.json({
+      success: true,
+      message: "HTML 데모가 성공적으로 생성되고 업로드되었습니다.",
+      prdFile: workflowResult.prd_file,
+      htmlFile: workflowResult.html_file
+    });
+
+  } catch (error: any) {
+    console.error("HTML 데모 생성 오류:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     WebSocketEvents:
@@ -856,6 +935,80 @@ io.on("connection", (socket) => {
       userId: userId,
       roomId: (socket as any).roomId,
     });
+  });
+
+  // HTML 데모 생성 요청
+  socket.on("generate-html-demo", async (data: { roomId: string; userId: string; imageUrl?: string; prdUrl?: string; htmlUrl?: string }) => {
+    const { roomId, userId, imageUrl, prdUrl, htmlUrl } = data;
+
+    console.log("🚀 WebSocket HTML 데모 생성 요청:", { roomId, userId });
+    
+    try {
+      // 진행 상황 알림
+      socket.emit("html-demo-progress", { 
+        step: "summary", 
+        message: "채팅 요약 생성 중..." 
+      });
+
+      // 1. 채팅 요약 가져오기
+      const summary = await chatSummaryService.summarizeChat(roomId);
+      
+      socket.emit("html-demo-progress", { 
+        step: "fastapi", 
+        message: "PRD 및 HTML 생성 중..." 
+      });
+
+      // 2. FastAPI 호출하여 워크플로우 실행
+      const fastApiUrl = process.env.FASTAPI_URL || 'http://localhost:8000';
+      const requestPayload = {
+        conversation_summary: summary.summary,
+        prd_url: prdUrl || null,
+        image_url: imageUrl || null,
+        html_url: htmlUrl || null,
+        room_id: roomId
+      };
+
+      const workflowResponse = await fetch(`${fastApiUrl}/workflow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload)
+      });
+
+      if (!workflowResponse.ok) {
+        const errorText = await workflowResponse.text();
+        throw new Error(`FastAPI 호출 실패: ${workflowResponse.status} - ${errorText}`);
+      }
+
+      const workflowResult = await workflowResponse.json() as {
+        success: boolean;
+        prd_file: string;
+        html_file: string;
+        message: string;
+      };
+
+      socket.emit("html-demo-progress", { 
+        step: "upload", 
+        message: "파일 업로드 중..." 
+      });
+
+      // 완료 알림
+      socket.emit("html-demo-complete", {
+        success: true,
+        message: "HTML 데모가 성공적으로 생성되었습니다!",
+        prdFile: workflowResult.prd_file,
+        htmlFile: workflowResult.html_file
+      });
+
+    } catch (error: any) {
+      console.error("💥 WebSocket HTML 데모 생성 오류:", error);
+      
+      socket.emit("html-demo-error", {
+        success: false,
+        error: error.message || "HTML 데모 생성 중 오류가 발생했습니다."
+      });
+    }
   });
 
   // 파일 기반 녹음 시작

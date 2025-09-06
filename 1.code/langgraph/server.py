@@ -76,7 +76,7 @@ def run_html_direct(args):
         print(f"오류: PRD 파일을 찾을 수 없습니다: {args[0]}")
         sys.exit(1)
     
-    agent = HTMLAgent(args[1] if len(args) > 1 else "http://localhost:8000/llm")
+    agent = HTMLAgent(args[1] if len(args) > 1 else os.getenv('LLM_API_URL', 'https://d2co7xon1r3p3l.cloudfront.net/llm'))
     output_file = agent.generate_html(args[0])
     print(f"✅ HTML 파일 생성: {output_file}")
 
